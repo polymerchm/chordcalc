@@ -61,7 +61,7 @@ out.push("this {} is formated to here {}",'string1','string2')
 out.send()
 ```
 
-first parameter is   string that would be used with the `.format` method.  ANy number of arguments that correspont to fields in teh format string can follow
+first parameter is   string that would be used with the `.format` method.  Any number of arguments that correspond to fields in the format string can follow.
 
 
 
