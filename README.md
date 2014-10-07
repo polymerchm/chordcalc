@@ -33,7 +33,7 @@ mandolin (you notice the mandolin empahsis here) that allow the those chord tone
 ignored in testing for vaid fingerings.  On mandolins, and other 4 stringed instrumetns, the player often abandons the root, 5th or 3rd.
 
 Hitting the chord button will play the chord (see makeWaves.py above).  Hitting the arpeggio button will play the notes one by one.
-Hitting the button which describes the individual string tunings will play the sound of the instrument in fretted.
+Hitting the button which describes the individual string tunings will play the sound of the instrument when un-fretted.
 
 *Identify mode (new)*
 
