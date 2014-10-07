@@ -4,16 +4,16 @@ chordcalc
 Turning  Gek S. Low's chordcalc python script into a full-featured chord calculator/player 
 
 makeWaves.py
-============
+
 
 generates a set of 96 2 second wave files  used by chordcalc.py to play the sound of the notes.
 
 chordcalc.py
-============
+
 chordcalc_constants.py
-======================
+
 debugStream.py
-==============
+
 
 
 calc mode:
@@ -35,7 +35,7 @@ Hitting the chord button will play the chord (see makeWavespy above).  Hitting t
 Hitting the button which describes the individual string tunings will play the sound of the instrument in fretted.
 
 Identify mode (new)
-===================
+
 
 Swithing modes by hitting the ident or calc button  changes the operation.  In identify mode, you touch the fingerboard to indicate a fingering 
 When yo hit FInd, all possible "names" for the chord are given.  If the fingering is a chord partial, then the missing chord 
