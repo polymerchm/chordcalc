@@ -4,8 +4,7 @@ class debugStream():
 		self.out = ''
 		
 	def push(self,string,*args):
-		string += '\n'
-		self.out += string.format(*args)
+		self.out += string.format(*args) + '\n'
 	
 	def send(self):
 		print self.out
