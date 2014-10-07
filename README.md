@@ -38,7 +38,7 @@ Hitting the button which describes the individual string tunings will play the s
 *Identify mode (new)*
 
 
-Swithing modes by hitting the ident or calc button  changes the operation.  In identify mode, you touch the fingerboard to indicate a fingering 
+Switching modes by hitting the ident or calc button  changes the operation.  In identify mode, you touch the fingerboard to indicate a fingering 
 When yo hit FInd, all possible "names" for the chord are given.  If the fingering is a chord partial, then the missing chord 
 tones are indicated.  
 
