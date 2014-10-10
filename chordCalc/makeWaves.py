@@ -26,9 +26,9 @@ note_name= "C Cs D Ds E F Fs G Gs A As B".split()
 freq_list = Freq_table.split()
 freq_array = []
 for octave in range(9):
-    this_octave = freq_list[0:13]
-    freq_list = freq_list[13:]
-    freq_array.append([float(x) for x in this_octave[1:]])
+	this_octave = freq_list[0:13]
+	freq_list = freq_list[13:]
+	freq_array.append([float(x) for x in this_octave[1:]])
 
 
 
@@ -59,40 +59,40 @@ import numpy as np
 
 
 class Envelope():
-    def __init__(self,numSamples, attack=20,decay=80):
-        self.numSamples = numSamples
-        self.attack = attack
-        self.decay = decay
-        self.last_sample = 0;
-        self._normalize()
-        self.tAttack = int(float(numSamples)*(float(self.attack)/100))
-        self.tDecay = numSamples - self.tAttack
-        self.rateAttack = 1.0/self.tAttack
-        self.rateDecay = 1.0/self.tDecay
+	def __init__(self,numSamples, attack=20,decay=80):
+		self.numSamples = numSamples
+		self.attack = attack
+		self.decay = decay
+		self.last_sample = 0;
+		self._normalize()
+		self.tAttack = int(float(numSamples)*(float(self.attack)/100))
+		self.tDecay = numSamples - self.tAttack
+		self.rateAttack = 1.0/self.tAttack
+		self.rateDecay = 1.0/self.tDecay
 
-    def _normalize(self): #internal function to normalize the various times to total to 100
-        sum = self.attack + self.decay
-        self.attack *= 100.0/sum
-        self.decay *= 100.0/sum
+	def _normalize(self): #internal function to normalize the various times to total to 100
+		sum = self.attack + self.decay
+		self.attack *= 100.0/sum
+		self.decay *= 100.0/sum
 
-    def __call__(self,t):
-        env=t*self.rateAttack*(t<=self.tAttack)+(1.0-(t-self.tAttack)*self.rateDecay)*(t>self.tAttack)
-        env.clip(0.0,1.0)
-        return env
+	def __call__(self,t):
+		env=t*self.rateAttack*(t<=self.tAttack)+(1.0-(t-self.tAttack)*self.rateDecay)*(t>self.tAttack)
+		env.clip(0.0,1.0)
+		return env
 
 
 if os.path.exists('waves'):
-    response = console.alert('', 'DIRECTORY EXISTS. OVERWRITE?', 'yes','no')
-    if response == 2:
-        sys.exit()
-    else:
-        files = glob.glob('waves/*')
-        for f in files:
-            os.remove(f)
-        os.rmdir('waves')
-        os.mkdir('waves')
+	response = console.alert('', 'DIRECTORY EXISTS. OVERWRITE?', 'yes','no')
+	if response == 2:
+		sys.exit()
+	else:
+		files = glob.glob('waves/*')
+		for f in files:
+			os.remove(f)
+		os.rmdir('waves')
+		os.mkdir('waves')
 else:
-    os.mkdir('waves')
+	os.mkdir('waves')
 
 
 
@@ -107,21 +107,21 @@ numSamples = int(sampleRate * duration)
 t=linspace(0,duration*sampleRate,numSamples)
 envelope = Envelope(numSamples)(t)
 for octave in range(8):
-    for note in range(12):
-        freq = freq_array[octave][note]
-        numSamplesPerCyc = (sampleRate / freq)
+	for note in range(12):
+		freq = freq_array[octave][note]
+		numSamplesPerCyc = (sampleRate / freq)
 
-        # note and its first 2 odd harmoonics
-        fraction = 1.0/8.0
-        signal = np.zeros_like(t)
-        for harmonic in range(7):
-            signal += fraction*np.sin(np.pi * 2 * ((harmonic+1)*t / numSamplesPerCyc))
-        sample = 32767 * (volume) / 100 * signal * envelope
-        data = sample.astype(int16)
+		# note and its first 2 odd harmoonics
+		fraction = 1.0/8.0
+		signal = np.zeros_like(t)
+		for harmonic in range(7):
+			signal += fraction*np.sin(np.pi * 2 * ((harmonic+1)*t / numSamplesPerCyc))
+		sample = 32767 * (volume) / 100 * signal * envelope
+		data = sample.astype(int16)
 
-        fname = 'waves/{0}_{1}.wav'.format(note_name[note],octave)
-        f = wave.open(fname, 'w')
-        f.setparams((numChan, dataSize, sampleRate, numSamples, "NONE", "Uncompressed"))
-        f.writeframes(data.tostring())
-        f.close()
-        print "wrote {}".format(fname)
+		fname = 'waves/{0}_{1}.wav'.format(note_name[note],octave)
+		f = wave.open(fname, 'w')
+		f.setparams((numChan, dataSize, sampleRate, numSamples, "NONE", "Uncompressed"))
+		f.writeframes(data.tostring())
+		f.close()
+		print "wrote {}".format(fname)
