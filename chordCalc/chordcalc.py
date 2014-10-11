@@ -6,34 +6,34 @@ Version 0.3
 Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
-Copyright (c) August 19th, 2014						Steven K. Pollack
+Copyright (c) August 19th, 2014 Steven K. Pollack
 Free for personal use. All other rights reserved.
 
 USE AT YOUR OWN RISK!
-This software is provided AS IS and does not make any claim that it actually works, or that it will not cause your computer to self-destruct or eat up your homework.
+This software is provided AS IS and does not make any claim that it actually works,
+  or that it will not cause your computer to self-destruct or eat up your homework.
 
-Note that some calculated chords may be playable only by aliens with 10 tentacles. Please use your common sense. The author will not be responsible for any injuries from attempts at impossible fingerings.
+Note that some calculated chords may be playable only by aliens with 10 tentacles.
+Please use your common sense. The author will not be responsible for any injuries
+from attempts at impossible fingerings.
 
-The author reserves the right to change the behavior of this software without prior notice
+The author reserves the right to change the behavior of this software without prior notice.
 
-
- 									
 View objects:
-	
-tableview_root - 			root tone of chord
-tableview_type - 			chord type
+-------------
+tableview_root      - root tone of chord
+tableview_type      - chord type
 tableview_inst_tune - instrument/tuning selector
-tableview_filters     filters selection 
-tableview_find				display and interogate found chords
-view_neck					- 	drawing of neck/fingering
-button_up							previous chord shape/position
-button_down						next chord shape/position
-button_arp						play arpeggio
-button_chord					play chord 
-button_tuning					play the open strings
-button_calc_ident			change mode (show fingering for a chord, or 
-                      calculate chords from a fingering
-button_find						display ther calciualted fingering
+tableview_filters   - filters selection
+tableview_find      - display and interogate found chords
+view_neck           - drawing of neck/fingering
+button_up           - previous chord shape/position
+button_down         - next chord shape/position
+button_arp          - play arpeggio
+button_chord        - play chord
+button_tuning       - play the open strings
+button_calc_ident   - change mode (show fingering for a chord, or calculate chords from a fingering
+button_find         - display ther calciualted fingering
 
 """
 
@@ -1271,4 +1271,3 @@ if __name__ == "__main__":
 	mainView['button_up'].action = mainView['button_down'].action = onPrevNext
 	out = debugStream()
 	mainView.present()
-
