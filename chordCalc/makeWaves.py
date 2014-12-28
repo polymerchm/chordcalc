@@ -57,7 +57,6 @@ import math, wave, os, os.path, console, sys, glob
 from numpy import linspace,int16, array
 import numpy as np
 
-
 class Envelope():
 	def __init__(self,numSamples, attack=20,decay=80):
 		self.numSamples = numSamples
@@ -93,35 +92,55 @@ if os.path.exists('waves'):
 		os.mkdir('waves')
 else:
 	os.mkdir('waves')
-
-
-
-
-sampleRate = 44100 # of samples per second (standard)
+	
+sampleRate = 221000 # of samples per second (standard)
 numChan = 1 # of channels (1: mono, 2: stereo)
 dataSize = 2 # 2 bytes because of using signed short integers => bit depth = 16
-duration = 2 # seconds
+duration = 1.0 # seconds
 volume = 100 # percent
 numSamples = int(sampleRate * duration)
 
 t=linspace(0,duration*sampleRate,numSamples)
 envelope = Envelope(numSamples)(t)
+print len(envelope)
+
 for octave in range(8):
 	for note in range(12):
 		freq = freq_array[octave][note]
 		numSamplesPerCyc = (sampleRate / freq)
 
-		# note and its first 2 odd harmoonics
-		fraction = 1.0/8.0
+		# note and its 1st 2 harmonics
 		signal = np.zeros_like(t)
-		for harmonic in range(7):
-			signal += fraction*np.sin(np.pi * 2 * ((harmonic+1)*t / numSamplesPerCyc))
-		sample = 32767 * (volume) / 100 * signal * envelope
+		relative = [1.0,0.4,0.04,0.01,0.01,0.01,0.01,0.01]
+		sum = 0
+		for term in relative: sum += term
+		relative = [x/sum for x in relative]
+		for harmonic in range(len(relative)):
+			signal += relative[harmonic]*np.sin(np.pi * 2 * ((harmonic+1)*t / numSamplesPerCyc))
+
+		sample = signal * envelope
+		max = abs(np.amax(sample))
+		min = abs(np.amin(sample))
+		if max > min:
+			sample = sample * 32767 / max
+		else:
+			sample = sample * 32767 / min			
 		data = sample.astype(int16)
 
+	
 		fname = 'waves/{0}_{1}.wav'.format(note_name[note],octave)
 		f = wave.open(fname, 'w')
 		f.setparams((numChan, dataSize, sampleRate, numSamples, "NONE", "Uncompressed"))
 		f.writeframes(data.tostring())
 		f.close()
 		print "wrote {}".format(fname)
+		
+		
+
+
+
+
+
+
+
+

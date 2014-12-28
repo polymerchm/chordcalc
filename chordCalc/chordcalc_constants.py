@@ -21,6 +21,8 @@ NOTE_B = 11
 NOTE_NAMES = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B']
 NOTE_FILE_NAMES = ['C_', 'Cs_','D_', 'Ds_','E_','F_','Fs_','G_','Gs_','A_','As_','B_']
 
+
+
 NOTES = {
 	'C': NOTE_C,
 	'C#': NOTE_Cs,
@@ -54,6 +56,17 @@ SCALENOTES = ['R','b2','2','b3','3','4','b5','5','#5','6','b7','7','R','b9','9',
 CHORDTYPE = [
 	('maj', (0,4,7)),
 	('min', (0,3,7)),
+	('dim', (0,3,6)), # note, not dim7
+	('aug', (0,4,8)),
+	('M7', (0,4,7,11)),
+	('m7', (0,3,7,10)),
+	('7', (0,4,7,10)),
+	('m7b5', (0,3,6,10)), # half dim
+	('dim7', (0,3,6,9)),
+	('6', (0,4,7,9)),
+	('9', (0,4,7,10,14)),
+	('sus2', (0,2,7)),
+	('sus4', (0,5,7)),
 	('omit3',(0,7)),
 	('#5', (0,4,8)),
 	('(b5)', (0,4,6)),
@@ -73,11 +86,11 @@ CHORDTYPE = [
 	('13sus', (0,5,7,10,14,21)),
 	('13susb9', (0,5,7,10,13,21)),
 	('5', (0,7)),
-	('6', (0,4,7,9)),
+
 	('6(add9)', (0,4,7,9,14)),
 	('69', (0,4,7,9,14)),
 	('6/9', (0,4,7,9,14)),
-	('7', (0,4,7,10)),
+
 	('7#11', (0,4,7,10,18)), # no 9th
 	('7#5', (0,4,8,10)),
 	('7#5#9', (0,4,8,10,15)),
@@ -101,7 +114,7 @@ CHORDTYPE = [
 	('7sus2', (0,2,7,10)),
 	('7sus4', (0,5,7,10)),
 	('7susb9', (0,5,7,10,13)),
-	('9', (0,4,7,10,14)),
+
 	('9#11', (0,4,7,10,14,18)),
 	('9#5', (0,4,8,10,14)),
 	('9+5', (0,4,8,10,14)),
@@ -112,7 +125,7 @@ CHORDTYPE = [
 	('M13', (0,4,7,11,21)), # no 9th and 11th
 	('M13#11', (0,4,7,11,18,21)), # no 9th
 	('M6', (0,4,7,9)),
-	('M7', (0,4,7,11)),
+
 	('M7#11', (0,4,7,11,18)), # no 9th
 	('M7#5', (0,4,8,11)),
 	('M7(add13)', (0,4,7,10,13,21)), # no 11th
@@ -122,14 +135,14 @@ CHORDTYPE = [
 	('M9', (0,4,7,11,14)),
 	('M9#11', (0,4,7,11,14,18)),
 	('add9', (0,4,7,14)),
-	('aug', (0,4,8)),
+
 	('aug7', (0,4,8,10)),
 	('aug7#9', (0,4,8,10,15)),
 	('aug7b9', (0,4,8,10,13)),
 	('aug9', (0,4,8,10,14)),
 	('aug9M7', (0,4,8,11,14)),
-	('dim', (0,3,6)), # note, not dim7
-	('dim7', (0,3,6,9)),
+
+
 	('dim7(addM7)', (0,3,6,11)),
 	('m', (0,3,7)),
 	('m#5', (0,3,8)),
@@ -150,7 +163,7 @@ CHORDTYPE = [
 	('m6(add9)', (0,3,7,9,14)),
 	('m69', (0,3,7,9,14)),
 	('m6/9', (0,3,7,9,14)),
-	('m7', (0,3,7,10)),
+
 	('m7#9', (0,3,7,10,15)),
 	('m7(#9)', (0,3,7,10,15)),
 	('m7(add11)', (0,3,7,10,17)),
@@ -158,7 +171,6 @@ CHORDTYPE = [
 	('m7(b9)', (0,3,7,10,13)),
 	('m7(omit5)', (0,3,10)),
 	('m7-5', (0,3,6,10)), # half dim
-	('m7b5', (0,3,6,10)), # half dim
 	('m7b5b9', (0,3,6,10,13)),
 	('m7b9', (0,3,7,10,13)),
 	('m7b9#11', (0,3,7,10,13,18)),
@@ -175,17 +187,67 @@ CHORDTYPE = [
 	('min(maj7)', (0,3,7,11)),
 	('omit3(add9)', (0,7,14)),
 	('omit3add9', (0,7,14)),
+
+
 	('sus', (0,5,7)),
-	('sus2', (0,2,7)),
-	('sus4', (0,5,7)),
 	('sus9', (0,5,7,10,14)),
 	]
 
 
 CHORD_LIST_CLEAN = [{'title':chord, 'fingering':fingering, 'accessory_type':'none'} for chord,fingering in CHORDTYPE]
 
-#print chord_list
-#sys.exit(0)
+SCALETYPE =[ #  T = Whole, S = Semitone, # = number of semitones 
+						('Major',  						'TTSTTTS'),
+						('Minor',  						'TSTTTTS'),
+						('Dorian', 						'TSTTTST'),
+						('Phrygian',					'STTTSTT'),
+						('Lydian',						'TTTSTTS'),
+						('Mixolydian', 				'TTSTTST'),
+						('Aoelian',						'TSTTSTT'),
+						('Locrian',						'STTSTTT'),
+						('Blues Major', 			'TSS3T3'),
+						('Blues Minor', 			'3TSS3T'),
+						('Penta Major', 			'TT3T3'),
+						('Penta Minor', 			'3TT3T'),
+						('Harm Minor', 				'TSTTS3S'),
+						('Melod Minor', 			'TSTTTTS'),
+						('Whole Tone',				'TTTTTT'),
+						('Dimin (WH)',				'TSTSTST'),
+						('Bebop Major',				'TTSTTSSS')					
+					]
+					
+TRUE_ROOT = {						
+             	'Dorian': 		2, # second scale degree
+             	'Phrygian':		4, # third scale degree
+             	'Lydian':			5, # fourth scale degree
+             	'Mixolydian':	7, # fifth scale degree
+							'Aoelian': 		9, # sixth scale degree
+							'Locrian':		11, # seventh scale degree						
+						}
+					
+CIRCLE_OF_FIFTHS = {"C":0,
+                    "G":1,
+                    'D':2,
+                    'A':3,
+                    'E':4,
+                    'B':5,
+                    'F#':6,
+                    'C#':7,
+                    'G#':8,
+                    'F':-1,
+                    'Bb':-2,
+                    'Eb':-3,
+                    'Ab':-4,
+                    'Db':-5,
+                    'Gb':-6,
+                    'Cb':-7,
+                    'Fb':-8
+                    }
+
+
+					
+SCALE_LIST_CLEAN = [{'title': scale, 'scaleintervals': intervals, 'accessory_type':'none'} for scale,intervals in SCALETYPE]
+
 # Tunings and their corresponding default spans
 # Instruments I don't play has default span = 3
 # I only care about the relative pitches of the open strings against the lowest bass note
