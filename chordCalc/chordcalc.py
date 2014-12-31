@@ -41,6 +41,7 @@ slider_arp					- set arpegio and scale playback speed
 lbl_fullchord				- displays the notes in the display chord (full chord, no filters)
 lbl_definition			- displays the scale tones in a the full chord
 										- display relative major of greek mode
+btn_sharpFlat				- forces shaprs for flats for non-standard keys (not in the circle of fifths)
 """
 
 import sys, os.path, re, ui, console, sound, time, math
@@ -1580,17 +1581,23 @@ def parseChordName(chordstr):
 # previous/next chord form
 
 def onPrevNext(button):
-	cn = fretboard.get_chord_num()
-	nc = fretboard.get_num_chords()
-	if button.name == 'button_down':
-		if cn < nc-1:
-			cn +=1 
-	else:
-		cn -= 1
-		if cn < 0:
-			cn = 0
-	fretboard.set_chord_num(cn)
-	fretboard.set_needs_display()
+	global currentState
+	try:
+		fretboard = currentState['fretboard']
+	except:
+		return
+	if fretboard.ChordPositions:
+		cn = fretboard.get_chord_num()
+		nc = fretboard.get_num_chords()
+		if button.name == 'button_down':
+			if cn < nc-1:
+				cn +=1 
+		else:
+			cn -= 1
+			if cn < 0:
+				cn = 0
+		fretboard.set_chord_num(cn)
+		fretboard.set_needs_display()
 					
 	
 ###################################################
