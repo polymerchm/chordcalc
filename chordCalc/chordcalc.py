@@ -21,27 +21,27 @@ The author reserves the right to change the behavior of this software without pr
 
 View objects:
 -------------
-tableview_roots  	  - root tone of chord
+tableview_roots     - root tone of chord
 tableview_type      - chord type
 tableview_inst_tune - instrument/tuning selector
 tableview_filters   - filters selection
 tableview_find      - display and interogate found chords
-tableview_scale			- display vaious scales
+tableview_scale     - display vaious scales
 view_neck           - drawing of neck/fingering
 button_up           - previous chord shape/position
 button_down         - next chord shape/position
 button_arp          - play arpeggio
 button_chord        - play chord
 button_tuning       - play the open strings
-button_cc_modew   	- change mode (show fingering for a chord, or calculate chords from a fingering
-                                       of display scales)
+button_cc_modew     - change mode (show fingering for a chord, or calculate chords from a fingering
+                                   of display scales)
 button_find         - display ther calculated fingering
-slider_volume				- set play volume
-slider_arp					- set arpegio and scale playback speed
-lbl_fullchord				- displays the notes in the display chord (full chord, no filters)
-lbl_definition			- displays the scale tones in a the full chord
-										- display relative major of greek mode
-btn_sharpFlat				- forces shaprs for flats for non-standard keys (not in the circle of fifths)
+slider_volume       - set play volume
+slider_arp          - set arpegio and scale playback speed
+lbl_fullchord       - displays the notes in the display chord (full chord, no filters)
+lbl_definition      - displays the scale tones in a the full chord
+                    - display relative major of greek mode
+btn_sharpFlat       - forces shaprs for flats for non-standard keys (not in the circle of fifths)
 """
 
 import sys, os.path, re, ui, console, sound, time, math
@@ -53,20 +53,17 @@ from debugStream import debugStream
 class CurrentState():
 	'status of shared state date for the gui'
 	def __init__(self):
-		self.states = {'instrument':None,
-		               'filters':None,
-		               'scale':None,
-		               'chord':None,
-		               'root':None,
-		               'fretboard':None,
-		               'mode':'C'
+		self.states = {'instrument' : None,
+		               'filters'    : None,
+		               'scale'      : None,
+		               'chord'      : None,
+		               'root'       : None,
+		               'fretboard'  : None,
+		               'mode'       : 'C'
 		               }  #scale/chord mode 
 	
 	def __getitem__(self,key):
-		if key in self.states:
-			return self.states[key]
-		else:
-			return None
+		return self.states.get(key, None)
 	
 	def __setitem__(self,key,value):
 		self.states[key] = value
@@ -77,26 +74,18 @@ def rotate(list,index):
 			positive index move items form left side of list to right
 			so list[0] become list[-1]
 			negative is vice versa'''
-	if not index:
-		return list
-	return list[index %len(list):] + list[:index % len(list)]	
-			
+	return list[index %len(list):] + list[:index % len(list)] if index else list
 
-	
 def instrument_type(): # return the type of instrument based on current selected 
 	text = currentState['instrument']['title']
-	if re.match('^guitar',text,flags=re.I):
-		return 'guitar'
-	elif re.match("^mando",text,flags=re.I):
-		return 'mandolin'
-	elif re.match("^ukulele",text,flags=re.I):
-		return 'ukulele'
-	else:
-		return 'generic'
+	for instrument in 'guitar mandolin ukulele'.split()
+		if re.match('^{}'.format(instrument), text , flags=re.I):
+			return instrument
+	return 'generic'
 			
 def uniqify(sequence, idfun=None):
 	''' return a unique, order preserved version in input list'''
-	if idfun is None:
+	if not idfun:
 		def idfun(x): return x
 	seen = {}
 	result = []
@@ -111,13 +100,8 @@ def uniqify(sequence, idfun=None):
 def fingeringToString(list):
 	''' turn fingering to a text string for hashing'''
 	hashcodes = 'abcdefghijklmnopqrstuvwxyz-'
-	text = ''
-	for item in list:
-		text += hashcodes[item]
-	return text 
-	
-	
-	
+	return ''.join([hashcodes[item] for item in list])
+
 def calc_fingerings():
 	'''calculate the fingerings and fretboard positions for the desired chord'''
 	global currentState 
@@ -1853,4 +1837,3 @@ if __name__ == "__main__":
 	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)
 	mainView.present(style='full_screen',orientations=('landscape',))
-
