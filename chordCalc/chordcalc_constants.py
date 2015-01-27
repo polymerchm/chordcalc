@@ -263,6 +263,7 @@ TUNINGS = [
 	# Guitar
 	('GUITAR', [[NOTE_E, NOTE_A, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
 	('MANDOLIN', [[NOTE_G, NOTE_D+12, NOTE_A+12, NOTE_E+24], SPAN_DEFAULT_MANDOLIN],3),
+	('Banjo - 5 string', [[NOTE_G+24, NOTE_D, NOTE_G, NOTE_B+12,NOTE_G+24], SPAN_DEFAULT_GUITAR],3),
 	('BOUZOUKI (Celtic)', [[NOTE_G, NOTE_D+12, NOTE_A+12, NOTE_D+24], SPAN_DEFAULT_MANDOLIN],2),
 	('4 STRING GUITAR OPEN G', [[NOTE_G, NOTE_D+12, NOTE_G+12, NOTE_B+12], SPAN_DEFAULT_GUITAR],2),
 	('UKULELE', [[NOTE_G+12, NOTE_C, NOTE_E, NOTE_A], SPAN_DEFAULT_UKULELE],3),
@@ -324,8 +325,8 @@ TUNINGS = [
 ]
 
 
-TUNING_LIST_CLEAN = [{'title':type, 'notes':ns[0], 'span':ns[1], 'octave':oct,'accessory_type':'none'} 
-for type,ns,oct in TUNINGS]
+TUNING_LIST_CLEAN = [{'title':title, 'notes':ns[0], 'span':ns[1], 'octave':oct,'accessory_type':'none'} 
+for title,ns,oct in TUNINGS]
 	
 
 
@@ -363,4 +364,12 @@ FILTER_MUTUAL_EXCLUSION_LIST ={
                          'HIGH_3': ['LOW_3'],
                          'LOW_3': ['HIGH_3']
                          }
-	
+                         
+CAPOS = [
+         {'title':		'Full Capo',			'fret':	0,	'mask': (1,1,1,1,1,1), 'accessory_type': 'none'},
+         {'title':		'"Dropped D"',		'fret':	0,	'mask': (0,1,1,1,1,1), 'accessory_type': 'none'},
+         {'title':		'"Hi Dropped D"',	'fret':	0,	'mask': (1,1,1,1,1,0), 'accessory_type': 'none'},
+         {'title':		'Sus2',						'fret':	0,	'mask': (0,1,1,1,0,0), 'accessory_type': 'none'},
+         {'title':		'Reverse Sus2',		'fret':	0,	'mask': (0,0,1,1,1,0), 'accessory_type': 'none'},
+         {'title':		'Banjo 5th',			'fret':	0,	'mask': (1,), 				 'accessory_type': 'none'},
+        ]	
