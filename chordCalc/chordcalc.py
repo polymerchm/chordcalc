@@ -7,7 +7,11 @@ Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
 Copyright (c) August 19th, 2014 Steven K. Pollack
+Version 1.01
+January 13, 2015
+
 Free for personal use. All other rights reserved.
+
 
 USE AT YOUR OWN RISK!
 This software is provided AS IS and does not make any claim that it actually works,
@@ -21,27 +25,29 @@ The author reserves the right to change the behavior of this software without pr
 
 View objects:
 -------------
-tableview_roots     - root tone of chord
+tableview_roots  	  - root tone of chord
 tableview_type      - chord type
 tableview_inst_tune - instrument/tuning selector
 tableview_filters   - filters selection
 tableview_find      - display and interogate found chords
-tableview_scale     - display vaious scales
+tableview_scale			- display vaious scales
+view_fretEnter			- custon view for fret number entry
 view_neck           - drawing of neck/fingering
 button_up           - previous chord shape/position
 button_down         - next chord shape/position
 button_arp          - play arpeggio
 button_chord        - play chord
 button_tuning       - play the open strings
-button_cc_modew     - change mode (show fingering for a chord, or calculate chords from a fingering
-                                   of display scales)
+button_cc_modew   	- change mode (show fingering for a chord, or calculate chords from a fingering
+                                       of display scales)
 button_find         - display ther calculated fingering
-slider_volume       - set play volume
-slider_arp          - set arpegio and scale playback speed
-lbl_fullchord       - displays the notes in the display chord (full chord, no filters)
-lbl_definition      - displays the scale tones in a the full chord
-                    - display relative major of greek mode
-btn_sharpFlat       - forces shaprs for flats for non-standard keys (not in the circle of fifths)
+slider_volume				- set play volume
+slider_arp					- set arpegio and scale playback speed
+lbl_fullchord				- displays the notes in the display chord (full chord, no filters)
+lbl_definition			- displays the scale tones in a the full chord
+										- display relative major of greek mode
+btn_sharpFlat				- forces shaprs for flats for non-standard keys (not in the circle of fifths)
+sp_span							- spinner for changing the span and recalculating chords based on span
 """
 
 import sys, os.path, re, ui, console, sound, time, math
@@ -49,24 +55,8 @@ from PIL import Image
 from copy import deepcopy
 from chordcalc_constants import *
 from debugStream import debugStream
+from Spinner import Spinner
 
-class CurrentState():
-	'status of shared state date for the gui'
-	def __init__(self):
-		self.states = {'instrument' : None,
-		               'filters'    : None,
-		               'scale'      : None,
-		               'chord'      : None,
-		               'root'       : None,
-		               'fretboard'  : None,
-		               'mode'       : 'C'
-		               }  #scale/chord mode 
-	
-	def __getitem__(self,key):
-		return self.states.get(key, None)
-	
-	def __setitem__(self,key,value):
-		self.states[key] = value
 
 
 def rotate(list,index):
@@ -74,13 +64,16 @@ def rotate(list,index):
 			positive index move items form left side of list to right
 			so list[0] become list[-1]
 			negative is vice versa'''
-	return list[index %len(list):] + list[:index % len(list)] if index else list
+			
+	return list[index % len(list):] + list[:index % len(list)]	if index else list
+			
 
+	
 def instrument_type(): # return the type of instrument based on current selected 
 	text = currentState['instrument']['title']
-	for instrument in 'guitar mandolin ukulele'.split()
-		if re.match('^{}'.format(instrument), text , flags=re.I):
-			return instrument
+	for type in 'guitar mando ukulele banjo'.split():
+		if re.match("^{}".format(type),text,flags=re.I):
+			return type
 	return 'generic'
 			
 def uniqify(sequence, idfun=None):
@@ -101,7 +94,9 @@ def fingeringToString(list):
 	''' turn fingering to a text string for hashing'''
 	hashcodes = 'abcdefghijklmnopqrstuvwxyz-'
 	return ''.join([hashcodes[item] for item in list])
-
+	
+	
+	
 def calc_fingerings():
 	'''calculate the fingerings and fretboard positions for the desired chord'''
 	global currentState 
@@ -121,9 +116,10 @@ def calc_fingerings():
 		fingerings = []
 		result = []
 		console.show_activity()
-		for position in range(0,fretboard.numFrets,span):
+		for position in range(0,fretboard.numFrets-span):
 			fingeringThisPosition = findFingerings(key, chordtype, tuning, position, span)
-			fingerings = fingerings + fingeringThisPosition
+			if fingeringThisPosition:
+				fingerings = fingerings + fingeringThisPosition
 		fingerings = uniqify(fingerings,idfun=(lambda x: tuple(x)))
 		if fingerings:
 			for fingering in fingerings:
@@ -219,20 +215,17 @@ def calc_chord_scale():
 					
 	# calculate notes in the current key
 	chordNotes = [(x+key) % 12 for x in chord]
+	capoOffsets = capos.capoOffsets()
 	scale = []
-	for string in tuning:
+	for i,string in enumerate(tuning):
 		thisString = []
-		for fret in range(fretboard.numFrets+1): # zero is the open string
+		for fret in range(capoOffsets[i],fretboard.numFrets+1): # zero is the open string
 			tone = (string + fret) %12
 			if tone in chordNotes:
 				thisString.append((fret-1,(tone-key)%12))
 		scale.append(thisString)
 
 	return scale
-	
-	
-	
-	
 		
 def calc_scale_notes():
 	''' calculate the scale notes for the curent key, instrument and scale type'''
@@ -248,6 +241,7 @@ def calc_scale_notes():
 	# format of the returned data is [[[fret, scalenote, scaletone, octave],.....numer on string
 	#                                                                         ] length = numStrings
 	# first unpack the scale spacing from the string
+	capoOffsets = capos.capoOffsets()
 	intervals = [0]
 	for letter in scaleintervals:
 		if letter == 'S':
@@ -264,9 +258,9 @@ def calc_scale_notes():
 		notes.append(nextNote % 12)
 		
 	scaleNotes= []
-	for string in tuning:
+	for i,string in enumerate(tuning):
 		thisString = []  
-		for fret in range(fretboard.numFrets+1):
+		for fret in range(capoOffsets[i],fretboard.numFrets+1):
 			note = (fret + string) % 12
 			if note in notes:
 				thisString.append((fret,note))
@@ -383,7 +377,7 @@ def apply_filters(filters,fingerings):
 		temp_fingerings = filtered
 		
 	filtered = []
-	if 'DOUBLE_STOPS' in filters and instrumentType == 'mandolin': # create adjacent string double stops for the chords
+	if 'DOUBLE_STOPS' in filters and instrumentType == 'mando': # create adjacent string double stops for the chords
 		numStrings = len(fingerings[0][1])
 		for fingering in temp_fingerings:			
 			for i,string in enumerate(fingering[1]):
@@ -449,17 +443,24 @@ def tuningLabel(notes):
 	
 def getScaleNotes(key, chordtype, tuning, fingering):
 	'''Given a fingering, gets the scale note relative to the key'''
+
 	scalenotes = []
 	for i, v in enumerate(fingering):
 		if v == -1:
 			scalenotes.append('X')
 		else:
-			fingerednote = (tuning[i] + fingering[i]) % 12
+			effTuning = tuning[i]
+			if instrument.is5StringBanjo and i == 0: #neeed to correct for short string
+				effTuning = tuning[i] - fretboard.fret5thStringBanjo		
+			fingerednote = (effTuning + fingering[i]) % 12
 			for chordrelnote in chordtype:
 				chordnote = (key + chordrelnote) % 12
 				if fingerednote == chordnote:
 					scalenotes.append(SCALENOTES[chordrelnote])
 	return scalenotes
+	
+	
+
 
 
 # Finds the chord fingerings for a given tuning (number of strings implied)
@@ -492,11 +493,23 @@ def findValidFrets(key, chordtype, tuning, pos, span):
 	if not tuning:
 		return None
 	strings = []
-	for string in tuning:
+	nutOffsets = currentState['capos'].capoOffsets()
+	for i,string in enumerate(tuning):
+		# offset 5 string banjo 
+		if instrument.is5StringBanjo and i == 0:
+			string -= fretboard.fret5thStringBanjo 
 		frets = []
-		searchrange = range(pos, pos+span+1)
+		if nutOffsets[i] <= pos:
+			start = pos
+			stop = pos+ span+1
+		elif pos <= nutOffsets[i] <= pos+span+1:
+			start = nutOffsets[i]
+			stop = pos + span+1
+		else: #behind the capo
+			continue
+		searchrange = range(start,stop)
 		if pos != 0: # include open strings is not at pos 0
-			searchrange = [0] + searchrange
+			searchrange = [nutOffsets[i]] + searchrange
 		for fret in searchrange:
 			for chordrelnote in chordtype:
 				note = (string + fret) % 12
@@ -630,6 +643,10 @@ def getScaleNotes(key, chordtype, tuning, fingering):
 		if v == -1:
 			scalenotes.append('X')
 		else:
+			effTuning = tuning[i]
+			if instrument.is5StringBanjo and i == 0:
+				effTuning = tuning[i] - fretboard.fret5thStringBanjo
+				
 			fingerednote = (tuning[i] + fingering[i]) % 12
 			for chordrelnote in chordtype:
 				chordnote = (key + chordrelnote) % 12
@@ -686,6 +703,8 @@ def relativeMajorDisplay():
 		mainView['lbl_definition'].hidden = True
 
 	
+	
+	
 # Fretboard Class
 
 class Fretboard(ui.View): # display fingerboard and fingering of current chord/inversion/file
@@ -725,6 +744,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.arpMax = 0.5
 		self.arpSpeed = (self.arpMax + self.arpMin)/2.0
 		self.sharpFlatState = '#'
+		self.fret5thStringBanjo = 5
 		
 	def sharpFlat(self,sender): #toggle
 		self.sharpFlatState = 'b' if self.sharpFlatState == '#' else '#'
@@ -770,6 +790,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		return int((self.fretDistance(self.scale,fret) + self.fretDistance(self.scale,fret-1))/2.0)	
 		
 	def stringSpacing(self):
+		global currentState
 		numStrings = len(currentState['instrument']['notes'])
 		offset = int(self.offsetFactor*self.fbWidth)
 		return (numStrings,offset,int((self.fbWidth-2*offset)/float(numStrings-1)))
@@ -782,29 +803,114 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		""" return a path for a filled centered circle """
 		return ui.Path.rect(x -r, y -r, 2*r,2*r)		
 		
-	def draw(self):
-		self.tuning = currentState['instrument']
-		self.root = currentState['root']
-		self.chord = currentState['chord']
-		try:
-			self.key = currentState['root']['noteValue']
-			self.keySignature = currentState['root']['title']
-		except:
-			pass
 		
-		try:
-			self.scaleType = currentState['scale']['title']
-		except:
-			pass
+	def drawCapo(self,fret):
+		global currentState
+		width = self.fbWidth
+		numStrings,offset,ss = self.stringSpacing()
+		segment = int(width/float(numStrings))
+		capos = currentState['capos'].capos
+		mask = capos[fret]
+		if not instrument.is5StringBanjo: #conventional instrument
+			padHeight = self.fretDistance(self.scale,fret) - self.fretDistance(self.scale,fret-1) - 10
+			padY = self.fretDistance(self.scale,fret-1)	+	5
+			padStartX = 0
+			for i,flag in enumerate(mask):
+				if not flag:
+					padStartX += segment
+				else:
+					index = i
+					break
+			padEndX = index*segment
+			for i in range(index,len(mask)):
+				if mask[i]:
+					padEndX += segment
+					continue
+				else:
+					break
+			pad = ui.Path.rect(padStartX,padY,padEndX-padStartX,padHeight)
+			ui.set_color('#800040')
+			pad.fill()
 		
+		
+			barHeight = int((self.fretDistance(self.scale,14) - self.fretDistance(self.scale,13))*.75)
+			barY = self.fretboardYPos(fret) - barHeight/2
+			barX = 0
+			bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
+			ui.set_color('#E5E5E5')
+			bar.fill()
+		elif len(mask) != 1: #is a banjo, main capo  partial capos
+			padHeight = self.fretDistance(self.scale,fret) - self.fretDistance(self.scale,fret-1) - 10
+			padY = self.fretDistance(self.scale,fret-1)	+	5
+			padStartX = segment
+			width -= segment
+			barX = segment
+			pad = ui.Path.rect(padStartX,padY,width,padHeight)
+			ui.set_color('#800040')
+			pad.fill()					
+			barHeight = int((self.fretDistance(self.scale,14) - self.fretDistance(self.scale,13))*.75)
+			barY = self.fretboardYPos(fret) - barHeight/2
+			bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
+			ui.set_color('#E5E5E5')
+			bar.fill()
+		else: # is banjo, 5th string spike
+			x = self.stringX[0]
+			y = self.fretboardYPos(fret)
+			spike = self.PathCenteredSquare(x,y,20)
+			ui.set_color('#E5E5E5')
+			spike.fill()
+			
+
+		
+		
+		
+	def drawFingerboard(self):
+		global currentState
 		if self.tuning:
-			fretboard = ui.Path.rect(0, 0, self.fbWidth, self.fbHeight)
+			
+			# draw fingerboard
+			
+			startX = 0
+			startY = 0
+			width = self.fbWidth
+			height = self.fbHeight
+			if instrument.is5StringBanjo:
+				segment = int(width/5.0)
+				width -= segment
+				startX = segment
+			fretboard = ui.Path.rect(startX, startY, width, height)
 			ui.set_color('#4C4722')
 			fretboard.fill()
-		
-			nut = ui.Path.rect(0,0,self.fbWidth,self.nutOffset)
+					
+			# draw nut
+			
+			nut = ui.Path.rect(startX,startY,width,self.nutOffset)
 			ui.set_color('#ECF8D7')
 			nut.fill()
+			
+			if instrument.is5StringBanjo: # draw 5th string segment
+				radius = 30
+				fret5SB = self.fret5thStringBanjo
+				ui.set_color('#4C4722')
+				fretboard = ui.Path.rect(0,self.fretDistance(self.scale,fret5SB-1)+radius,segment,height-radius)
+				fretboard.fill()
+				fretboard = ui.Path.rect(radius,self.fretDistance(self.scale,fret5SB-1),segment-radius,radius)
+				fretboard.fill()
+				semi = ui.Path()
+				semi.move_to(radius,self.fretDistance(self.scale,fret5SB-1)+radius)
+				semi.add_arc(radius,self.fretDistance(self.scale,fret5SB-1)+radius,radius,0,270)
+				semi.close()
+				semi.fill()
+#
+				square = ui.Path.rect(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius,radius,radius)
+				square.fill()
+				semi = ui.Path()
+				semi.move_to(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius)
+				semi.add_arc(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius,radius,90,180)
+				ui.set_color('white')
+				semi.fill()
+				
+		#draw frets
 		
 			ui.set_color('white')
 			fretSpace = int((self.fbHeight - 2*self.nutOffset)/(self.numFrets))
@@ -816,7 +922,10 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				self.PrevFretY = yFret
 				fret = ui.Path()
 				fret.line_width = 3
-				fret.move_to(0,yFret)
+				if instrument.is5StringBanjo and index < fret5SB-1:
+					fret.move_to(startX,yFret)
+				else:
+					fret.move_to(0,yFret)
 				fret.line_to(self.fbWidth,yFret)
 				fret.stroke()
 
@@ -836,6 +945,8 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 			for xfraction in [0.25,0.75]:
 				marker= self.PathCenteredCircle(int(xfraction*self.fbWidth), markery12, self.markerRadius)
 				marker.fill()
+				
+		# draw strings
 		
 		#assume width is 1.5" and strings are 1/8" from edge
 			numStrings,offset,ss = self.stringSpacing()
@@ -843,27 +954,76 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 			ui.set_color('grey')
 			self.stringX = []
 			for index in range(numStrings):
+				startY = 0
+				if instrument.is5StringBanjo and index == 0:
+					startY = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
 				xString = offset + index*ss
 				self.stringX.append(xString)
 				string = ui.Path()
 				string.line_width = 3
-				string.move_to(xString,0)
+				string.move_to(xString,startY)
 				string.line_to(xString,self.fbHeight)
 				string.stroke()
 				self.nutPosition.append((xString,int(0.5* self.nutOffset)))
+				
+				
+		# if 5 string banjo, draw tuning peg
+		
+			if instrument.is5StringBanjo:
+				pegX = self.stringX[0]
+				pegY = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
+				peg = self.PathCenteredCircle(pegX,pegY,15)
+				ui.set_color('#B2B2B2')
+				peg.fill()
+				peg = self.PathCenteredCircle(pegX-7,pegY-6,2)
+				ui.set_color('white')
+				peg.fill()
+		
+		
+	def draw(self):
+		global currentState
+		self.tuning = currentState['instrument']
+		self.root = currentState['root']
+		self.chord = currentState['chord']
+		try:
+			self.key = currentState['root']['noteValue']
+			self.keySignature = currentState['root']['title']
+		except:
+			pass
+		
+		try:
+			self.scaleType = currentState['scale']['title']
+		except:
+			pass
+		
 
-					
+		self.drawFingerboard()
+		
+		capos = currentState['capos']
+			
+		for key in capos.capos.keys():
+			self.drawCapo(key)
+		
+		if self.tuning:			
+			capoOffsets = capos.capoOffsets()
 			if self.ChordPositions and self.cc_mode == 'C': 
 				# if there are some, draw current fingering or chord tone frets
 				if not self.showChordScale:
 					self.num_chords.text = "{}".format(len(self.ChordPositions))
 					self.chord_num.text = "{}".format(self.currentPosition+1)
 					middle_field.text = 'of'
-
 				 	fingering,chordTones,fretPositions = self.ChordPositions[self.currentPosition]
 				 	ui.set_color('red')
-				 	for string in fingering:
+				 	for i,string in enumerate(fingering):
 						x,y,chordtone,nutmarker = string
+						if i == 0 and instrument.is5StringBanjo:
+							if fretPositions[i] == -1:
+								y = (self.fretDistance(self.scale,self.fret5thStringBanjo)+self.fretDistance(self.scale,self.fret5thStringBanjo-1))/2
+						try:
+							if fretPositions[i] == capoOffsets[i]:
+								nutmarker = True
+						except:
+							console.hud_alert('fretPositions[i] == capoOffsets[i] i= {}'.format(i),'error',5)
 	
 						if not nutmarker:
 							ui.set_color('red')
@@ -882,14 +1042,17 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 							ui.draw_string(chordtone,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 							               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER,color='red')	
 				elif self.ChordScaleFrets:
-					for i,string in enumerate(self.ChordScaleFrets):
-						for fret,note in string:
+					for string,fret_note_pairs in enumerate(self.ChordScaleFrets):
+						for fret,note in fret_note_pairs:
 							chordtone = SCALENOTES[note]
-							x = self.stringX[i]
+							x = self.stringX[string]
 							if fret != -1:
 								y = self.fretboardYPos(fret+1)
 							else:
-								y = self.nutPosition[0][1]
+								if string == 0 and instrument.is5StringBanjo:
+									y = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
+								else:
+									y = self.nutPosition[0][1]
 							ui.set_color('red')
 							if note == 0:
 								marker= self.PathCenteredSquare(x,y,self.fingerRadius)
@@ -914,17 +1077,23 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 					values = self.touched[key]
 					x = self.stringX[values[2]]
 					y = self.fretboardYPos(values[3])
+					outchar = NOTE_NAMES[values[0]%12].split('/')[0]
 					if values[3]:
 						ui.set_color('red')
 						marker= self.PathCenteredCircle(x,y,self.fingerRadius)
 						marker.fill()
+						ui.set_color('white')
+						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',
+						                                         22),alignment=ui.ALIGN_CENTER)
+						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
 					else:
 						y = self.nutPosition[0][1]
-						size = ui.measure_string('O',font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER)
-						ui.draw_string('O',(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER)
+						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER,color='black')
-						size = ui.measure_string('O',font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
-						ui.draw_string('O',(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
+						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER,color='red')	
 				               
 			elif self.cc_mode == 'S': # display scale notes
@@ -932,6 +1101,8 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				if self.scale_notes:
 				 	for i,string in enumerate(self.scale_notes):
 						for fret,note in string:
+							if fret < capoOffsets[i]:
+								continue
 							x = self.stringX[i]
 							if fret == 1:
 								y = self.fretboardYPos(fret) + 12
@@ -957,7 +1128,10 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				if self.scaleFrets: # mark the scale notes
 					ui.set_color('yellow')
 					self.fifthPresent = False # prevent 5 and 5# from both being highlighted chord tones.
+					
 					for string,fret in self.scaleFrets:
+						if fret < capoOffsets[i]:
+							continue
 						x = self.stringX[string]				
 						if fret == 1:
 							y = self.fretboardYPos(fret) + 12
@@ -1007,9 +1181,8 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		if keySig in CIRCLE_OF_FIFTHS.keys():
 			sf = CIRCLE_OF_FIFTHS[keySig]
 		else:
-			print 'not in cof'
+			console.hud_alert('{} not in COF'.format(keySig),'error',2)
 			sf = 1 if self.sharpFlatState == '#' else -1 # use preference
-			print "sf = ",sf
 		if self.scaleType in TRUE_ROOT.keys():
 			origKeySig = keySig	
 			key = (key - TRUE_ROOT[self.scaleType]) % 12
@@ -1022,7 +1195,6 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 					origSF = CIRCLE_OF_FIFTHS[origKeySig]
 				else:
 					origSF = 1 if self.sharpFlatState == '#' else -1
-					print "origSF =", origSF
 			sf = origSF
 		outchar = NOTE_NAMES[note].split('/')
 		index = 0
@@ -1090,10 +1262,14 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		    return the center positions all markers.  X and open strings will be 
 		    marked at the nut"""
 		scaleNotes = getScaleNotes(key, chordtype, tuning, fingering)
+		#if len(scaleNotes) != len(fingering):
 		chordDrawPositions = []
 		numStrings,offset,ss = self.stringSpacing()
 		for i,fretPosition in enumerate(fingering): #loop over strings, low to high
-			note = scaleNotes[i]
+			try:
+				note = scaleNotes[i]
+			except:
+				continue
 			atNut = None
 			xpos = offset + i*ss	
 			if fretPosition in [-1,0]: #marker at nut
@@ -1118,6 +1294,7 @@ class Instrument(object):
 		self.items = items
 		self.fb = fb
 		self.instrument = currentState['instrument']
+		self.is5StringBanjo = False
 		
 	def __getitem__(self,key):
 		try:
@@ -1130,7 +1307,20 @@ class Instrument(object):
 			item['accessory_type'] = 'none'
 			
 	
-	
+	def updateScaleChord(self):
+		mode = currentState['mode']
+		if mode == 'C':
+			self.fingerings = calc_fingerings()
+			if self.fb.showChordScale:
+				self.fb.ChordScaleFrets = calc_chord_scale()
+			self.fb.set_fingerings(self.fingerings)
+		elif mode == 'S':
+			self.scale_notes = calc_scale_notes()
+			self.fb.set_scale_notes(self.scale_notes)
+		
+		self.fb.touched = {}
+		self.fb.set_needs_display()
+		tuningDisplay.title = tuningLabel(self.tuning['notes'])
 		
 # when new instrument is chosen, update the global and 
 # redraw the fretboard
@@ -1152,7 +1342,7 @@ class Instrument(object):
 # action for select
 		
 	def tableview_did_select(self,tableView,section,row): # Instrument
-		global tuningDisplay
+		global tuningDisplay, spanSpinner, currentState
 	
 		self.toggleChecked(row)
 		try:
@@ -1169,28 +1359,17 @@ class Instrument(object):
 		                'row':		row
 		               }
 		currentState['instrument'] = self.tuning
-		
 
+		self.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+
+		currentState['span'].value = thisRow['span']
+		currentState['span'].limits  = (1,thisRow['span']+2)
 		self.filters.set_filters() 
 		self.tvFilters.reload_data()
-
+		currentState['capos'].reset()
 		self.fb.scaleFrets = []
-		mode = currentState['mode']
-		
-		if mode == 'C':
-			self.fingerings = calc_fingerings()
-			if self.fb.showChordScale:
-				self.fb.ChordScaleFrets = calc_chord_scale()
-			self.fb.set_fingerings(self.fingerings)
-		elif mode == 'S':
-			self.scale_notes = calc_scale_notes()
-			self.fb.set_scale_notes(self.scale_notes)
-		
-		self.fb.touched = {}
-		self.fb.set_needs_display()
-		tuningDisplay.title = tuningLabel(self.tuning['notes'])
-		
-		
+		self.updateScaleChord()
+
 		
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -1461,7 +1640,7 @@ class Filters(ui.View):
 		it = instrument_type()
 		if it == 'guitar':
 			self.items = self.items + deepcopy(GUITAR_LIST_CLEAN) 
-		elif it == 'mandolin':
+		elif it == 'mando':
 			self.items = self.items + deepcopy(MANDOLIN_LIST_CLEAN)
 		else: # generic
 			pass
@@ -1471,7 +1650,6 @@ class Filters(ui.View):
 	
 	def reconsile_filters(self,filter):
 		if filter in FILTER_MUTUAL_EXCLUSION_LIST.keys():
-			
 			exclude = FILTER_MUTUAL_EXCLUSION_LIST[filter]
 			for exclusion in exclude:
 				if exclusion in self.filter_list:
@@ -1543,6 +1721,169 @@ class Filters(ui.View):
 		return self.chord
 		
 		
+class Capos(object):
+	global currentState
+	def __init__(self, items):
+		self.items = items
+		self.capos = {}
+		currentState['capos'] = self		
+		self.fb = currentState['fretboard']
+		
+	def __getitem__(self,key):
+		try:
+			return self.root[key]
+		except:
+			return None
+			
+	def reset(self):
+		for row in range(len(self.items)):
+			self.items[row]['fret'] = 0
+			self.items[row]['accessory_type'] = 'none'	
+		self.row = 0
+		self.capos = {}
+		tvCapos.reload_data()
+		
+	def capoOffsets(self):
+		''' calculate and return the offsets due to the applied capos'''
+		global currentState
+		capos = currentState['capos'].capos
+		numStrings = len(currentState['instrument']['notes'])
+		isFSB = instrument.is5StringBanjo
+		offsets = [0]*numStrings
+		if not isFSB:
+			for fret in capos.keys():
+				mask = capos[fret]
+				for i in range(numStrings):
+					value = fret if mask[i] else 0
+					offsets[i] = max(offsets[i],value)
+		else: # 5 string banjo
+			offsets = [fretboard.fret5thStringBanjo,0,0,0,0]
+			for fret in capos.keys():
+				mask = capos[fret]
+				if len(mask) == 1:
+				# is the fifth string
+					offsets[0] = max(offsets[0],fret)
+				else:
+					for i in range(1,5):
+						value = fret if mask[i] else 0
+						offsets[i] = max(offsets[i],value)
+		return offsets
+			
+		
+		
+			
+##############################
+# Chapter ListView Select
+
+	def isChecked(self,row): # is a checkbox set in a tableview items attribute
+		return self.items[row]['accessory_type'] == 'checkmark'
+		
+#####################################################################
+# Support routine to switch checkmark on and off in table view entry
+		
+	def toggleChecked(self,row):
+		self.items[row]['accessory_type'] = 'none' if self.isChecked(row) else 'checkmark'
+
+##############################################
+# action for select
+		
+	def tableview_did_select(self,tableView,section,row): #capos
+		global currentState,mainView
+		fb = currentState['fretboard']
+		self.row = row
+		fret = self.items[row]['fret']
+		if self.isChecked(row):
+			# uncheck and remove the entry in the dictionary
+			self.toggleChecked(row)
+			self.items[row]['fret'] = 0
+			del self.capos[fret]
+			tableView.reload_data()
+			instrument.updateScaleChord()
+			fb.set_needs_display()
+		else:
+			# need to handle the rest via special data entry view
+			numFrets = fretboard.numFrets
+			fretEnter = mainView['view_fretEnter']
+			minFret = fretEnter.min = 1
+			maxFret = fretEnter.max = numFrets
+			if self.items[row]['title'] == 'Banjo 5th':
+				if instrument_type() != 'banjo':
+					return None
+				else:
+					minFret = fretEnter.min = fretboard.fret5thStringBanjo + 1
+			fretEnter.label.text = "Enter fret # {}-{}".format(minFret,maxFret)
+			fretEnter.hidden = False
+			
+		
+
+		
+	def tableview_number_of_sections(self, tableview):
+		# Return the number of sections (defaults to 1)
+		return 1
+
+	def tableview_number_of_rows(self, tableview, section):
+		# Return the number of rows in the section
+		return len(self.items)
+
+	def tableview_cell_for_row(self, tableview, section, row):
+		# Create and return a cell for the given section/row
+		cell = ui.TableViewCell()
+		fret = self.items[row]['fret']
+		text = self.items[row]['title']
+		cell.text_label.text = "{} at fret {}".format(text,fret) if fret else text
+		cell.accessory_type = self.items[row]['accessory_type']
+		return cell
+		
+
+					
+		
+class FretEnter(ui.View):
+	''' implement routines for fret entry'''
+	def did_load(self):
+		self.row = 0
+		self.entry = 0
+		self.min = 0
+		self.max = 0
+		
+		for subview in self.subviews:
+			name = subview.name
+			if name.startswith('btn'):
+				subview.action = self.onButton
+			elif name.startswith('tf'):
+				self.textfield = subview
+			elif name.startswith('lab'):
+				self.label = subview
+				
+			
+			
+	def onButton(self,button): #business end of fretEnter
+		global currentState
+		capos = currentState['capos']
+		numFrets = fretboard.numFrets
+		row = capos.row
+		
+		if button.name.endswith('Cancel'):
+			mainView['view_fretEnter'].hidden = True
+		else:
+			entry = self.textfield.text
+			if not entry.isnumeric():
+				console.hud_alert('invalid entry','error')
+				return None
+			value = int(entry)
+			if self.min <= value <= self.max: #valid
+				capos.items[row]['fret'] = value
+				capos.toggleChecked(row)
+				capos.capos[value] = capos.items[row]['mask']
+				mainView['view_fretEnter'].hidden = True
+				tvCapos.reload_data()
+				instrument.updateScaleChord()
+				fretboard.set_needs_display()
+			else:
+				console.hud_alert('fret outside allowed range','error')
+				self.textfield.text = '0'
+				
+						
+			
 
 #
 # Display routines
@@ -1663,21 +2004,25 @@ def toggle_mode(button):
 	tvFind = currentState['tvFind']
 	tvScale = currentState['tvScale']
 	mainView = currentState['mainView']
+	try:
+		capos.reset()
+	except:
+		pass
 
 
 	mode = button.title
 	hideshow = {}
 	hideshow = {'I':  {'hide':
-	                					'tableview_root tableview_type tableview_scale label1 label_type_scale button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat'.split(),
+	                					'tableview_root tableview_type tableview_scale label1 label_type_scale button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span'.split(),
 											'show':
 														('tableview_find', 'button_find', 'button_chord', 'button_arp')
 										},						
  							'C':	{'hide':
 										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat'.split(),
-										'show': 'tableview_root tableview_type label1 label_type_scale chord_num num_chords label_middle button_chord button_arp'.split()
+										'show': 'tableview_root tableview_type label1 label_type_scale chord_num num_chords label_middle button_chord button_arp sp_span lbl_span'.split()
 										},
 							'S': 	{'hide': 
-										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition'.split(),
+										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span'.split(),
 											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes label_type_scale button_play_scale btn_sharpFlat'.split()
 										}
 								}
@@ -1754,6 +2099,19 @@ def on_slider_arp(sender):
 	fretboard = currentState['fretboard']
 	v = sender.value
 	fretboard.arpSpeed = fretboard.arpMin*v + (1.0-v)*fretboard.arpMax
+	
+def onSpanSpinner(sender):
+	''' repond to changes in span'''
+	global currentState
+	value = sender.value
+	thisInstrument = currentState['instrument']
+	if thisInstrument:
+		currentState['instrument']['span'] = value
+		instrument.updateScaleChord()
+
+
+		
+	
 		
 ##############################################
 ##############################################
@@ -1809,6 +2167,8 @@ if __name__ == "__main__":
 	scale = Scale(scale_list,fretboard)
 	tvScale.data_source = tvScale.delegate = scale
 	
+	
+	
 	mainView['button_arp'].action = play
 	mainView['button_chord'].action = play
 	mainView['button_ident'].action = toggle_mode
@@ -1827,12 +2187,32 @@ if __name__ == "__main__":
 	mainView['lbl_chord'].hidden = True
 	mainView['lbl_fullchord'].hidden = True
 	mainView['lbl_definition'].hidden = True
+
 	
 	currentState['tvFind'] = tvFind
 	currentState['tvScale'] = tvScale
 	currentState['fretboard'] = fretboard
 	currentState['mainView'] = mainView
-
+	
+	tvCapos = mainView['tableview_capos']
+	capo_list = deepcopy(CAPOS)
+	capos = Capos(capo_list)
+	tvCapos.data_source = tvCapos.delegate = capos
+	
+	spanSpinner = Spinner(frame=(12,10,122,73),
+	                      name='sp_span',
+	                      initialValue=SPAN_DEFAULT_UNKNOWN,
+	                      limits=(2,SPAN_DEFAULT_UNKNOWN+2),
+	                      action=onSpanSpinner)
+	mainView.add_subview(spanSpinner)
+	spanSpinner.frame = (559,443,122,73)
+	
+	mainView['view_fretEnter'].hidden = True
+	mainView['sp_span'].hidden = True
+	currentState['span'] = mainView['sp_span']
+	
+	
+	
 	fretboard.set_chordnum(chord_num,num_chords)
 	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)
