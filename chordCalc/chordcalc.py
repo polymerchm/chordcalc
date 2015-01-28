@@ -2028,6 +2028,12 @@ def toggle_mode(button):
 								}
 
 	fretboard.cc_mode = mode
+	
+	for thisButton in "button_scale button_ident button_calc".split():
+		mainView[thisButton].background_color = 'white'
+
+	button.background_color =  '#FFCC66'
+	
 	currentState['mode'] = mode
 	mode_hs = hideshow[mode]
 	for view in mode_hs['hide']:		
