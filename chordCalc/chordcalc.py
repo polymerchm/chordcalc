@@ -1215,9 +1215,12 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 
 	def touch_began(self,touch):
 		if self.cc_mode == 'I':
+			offsets = capos.capoOffsets()
 			x,y = touch.location
 			string = self.closest(x,self.stringX)
 			fret = self.closest(y,self.fretY)
+			if fret < offsets[string]:
+				return
 			location = (string,fret)
 			if location in self.touched.keys():
 				del self.touched[location]
