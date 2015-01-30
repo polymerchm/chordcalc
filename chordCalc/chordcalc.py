@@ -56,7 +56,7 @@ button_load					- bring up a menu to load a saved state
 import sys, os.path, re, ui, console, sound, time, math, json, dialogs
 from PIL import Image
 from copy import deepcopy
-from chordcalc_constants import *
+import chordcalc_constants as ccc
 from debugStream import debugStream
 from Spinner import Spinner
 
@@ -2191,13 +2191,48 @@ def onSaveState(button):
 def onLoadState(button):
 	pass
 	
+def createConfig():
+	if os.path.exists('config'):
+		try:
+			resp = console.alert('Restore the "factory settings"?','OK')
+			os.remove('config')
+		except KeyboardInterrupt as e:
+			return
+# read in the non-local data and write it out as a json object
+	ccc_constants = {}
+	for constant in ccc.__dict__.keys():
+	if constant[0].isupper: # a real constant
+		ccc_constants[constant] = ccc._dict_[constant]
+		
+	fh = open('config','wb')
+	fh.write(json.dump(ccc_constants))
+	fh.close()
+		
+
+
+		
+	
+def restoreConfig():
+	if os.path.exists('config'):
+		console.hud_alert('config file missing, restoring',2)
+		createConfig()
+	
 		
 ##############################################
 ##############################################
 if __name__ == "__main__":	
+	
+	
+	
 	if not os.path.exists('waves'):
 		console.alert('waves sound files not present, run makeWave.py')
 		sys.exit(1)
+		
+	if not os.path.exists('config'):
+		createConfig() 
+	else:
+		restoreConfig()
+		
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
 	num_chords = mainView['num_chords']
