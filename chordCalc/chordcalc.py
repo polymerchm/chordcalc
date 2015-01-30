@@ -7,8 +7,9 @@ Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
 Copyright (c) August 19th, 2014 Steven K. Pollack
-Version 1.01
+Version 2.01
 January 13, 2015
+
 
 Free for personal use. All other rights reserved.
 
@@ -52,7 +53,7 @@ button_save					- bring up a menu to save the current state of the filters, capo
 button_load					- bring up a menu to load a saved state
 """
 
-import sys, os.path, re, ui, console, sound, time, math, json
+import sys, os.path, re, ui, console, sound, time, math, json, dialogs
 from PIL import Image
 from copy import deepcopy
 from chordcalc_constants import *
@@ -2125,7 +2126,7 @@ def onSpanSpinner(sender):
 def setState(sfObj):
 	''' inputs the state file object and uses to allow for a selection of the current state'''
 	stateObj = json.loads(sfObj)
-	print stateObj.keys()
+	
 	
 	
 def initStateObj():
