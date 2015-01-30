@@ -2145,7 +2145,46 @@ def initStateObj():
 	return json.dumps(stateObj)
 	
 	
+def applyState(state):
+	''' apply the values in the stateObj'''
+	global instrument,capos,filters
+	if state['capos']:
+		pass
+		
+	if state['filters']:
+		pass
 	
+	instrumentRow = int(state['instrument'])
+	
+	for row in range(instrument.items):
+		instrument.items[row]['accessory_type'] = 'checkmark' if row == instrumentRow else 'none'
+			
+	thisRow = instrument.items[instrumentRow]
+	instrument.tuning = { 
+		               'title':		thisRow['title'],
+		                'notes':	thisRow['notes'],
+		                'span':		thisRow['span'],
+		                'octave':	thisRow['octave'],
+		                'row':		instrumentRow
+		               }
+	currentState['instrument'] = instrument.tuning
+
+	instrument.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+
+	currentState['span'].value = thisRow['span']
+	currentState['span'].limits  = (1,thisRow['span']+2)
+	instrument.filters.set_filters() 
+	tvFilters.reload_data()
+	tvCapos.reload_data()
+	tvInst.relaod_data()
+	instrument.fb.scaleFrets = []
+	instrument.updateScaleChord()
+	
+	
+	
+	
+	
+		
 def onSaveState(button):
 	pass
 	
