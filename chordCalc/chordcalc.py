@@ -48,14 +48,18 @@ lbl_definition			- displays the scale tones in a the full chord
 										- display relative major of greek mode
 btn_sharpFlat				- forces shaprs for flats for non-standard keys (not in the circle of fifths)
 sp_span							- spinner for changing the span and recalculating chords based on span
+button_save					- bring up a menu to save the current state of the filters, capos and instrument
+button_load					- bring up a menu to load a saved state
 """
 
-import sys, os.path, re, ui, console, sound, time, math
+import sys, os.path, re, ui, console, sound, time, math, json
 from PIL import Image
 from copy import deepcopy
 from chordcalc_constants import *
 from debugStream import debugStream
 from Spinner import Spinner
+
+
 
 
 
@@ -2118,8 +2122,34 @@ def onSpanSpinner(sender):
 		currentState['instrument']['span'] = value
 		instrument.updateScaleChord()
 
-
-		
+def setState(sfObj):
+	''' inputs the state file object and uses to allow for a selection of the current state'''
+	stateObj = json.loads(sfObj)
+	print stateObj.keys()
+	
+	
+def initStateObj():
+	''' create a state file object that stores the settings of the capos, filerters and the current instrument
+	
+	the structure of the file is a set of names "states"
+		each state has the sets of capos, filters and the instrument
+		the last "loaded" state is the default
+'''
+	stateObj = {'default': 		
+	                 			{'capos': [],     #rows in the capos.items
+	            					 'filters': [],   #rows in the filters.items
+	            					 'instrument': 0, # row in the instruments.items
+	            					}, 
+	            }
+	return json.dumps(stateObj)
+	
+	
+	
+def onSaveState(button):
+	pass
+	
+def onLoadState(button):
+	pass
 	
 		
 ##############################################
@@ -2220,9 +2250,28 @@ if __name__ == "__main__":
 	mainView['sp_span'].hidden = True
 	currentState['span'] = mainView['sp_span']
 	
+	mainView['button_save'].action = onSaveState
+	mainView['button_load'].action = onLoadState
+	
 	
 	
 	fretboard.set_chordnum(chord_num,num_chords)
 	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)
+	
+# implement state file 
+
+	STATE_FILE = 'state.json'
+	if os.path.exists(STATE_FILE):
+		stateFile = open(STATE_FILE,'rb')
+		stateFileObj = stateFile.read()
+		stateFile.close()
+		setState(stateFileObj)
+	else:
+		stateFileObj = initStateObj()
+		stateFile = open(STATE_FILE, 'wb')
+		stateFile.write(stateFileObj)
+		stateFile.close()
+		
+	
 	mainView.present(style='full_screen',orientations=('landscape',))
