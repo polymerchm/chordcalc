@@ -1,4 +1,4 @@
-chordcalc Version 2.0
+chordcalc Version 3.0
 =================
 
 Turning  Gek S. Low's chordcalc python script into a full-featured chord calculator/player 
@@ -17,19 +17,33 @@ generates a set of 96 2 second wave files  used by chordcalc.py to play the soun
 
 - **debugStream.py**
 
-The new features in 2.0 are:
+The new features in 3.0 are:
 	
-- support for the 5 string banjo that accounts for the shortened 5th string
+- constants can now be reloaded. No longer "globals"
 
-- support for capos.  
+- Chord, Capo, Filter and Instrument Tableviews can be edited to re-order or delete rows
 
-- descriptions in chordcalc_constants.py for the structure of the various lists.  You can also change the order that items for tableviews are presented to suit your particular intrumental preferences.
+- The current state of the tables can be saved or the "factory standard" restored
+
+- The current settings for chord, capo and filters can be saved under/loaded from a named setting.  The settings list can be edited.
+
+
+*Editing the Tables*
+
+The labels of the editable tables are actually buttons that enable/disable deleting rows or re-ordering each editable table.  If you wish to save this new "configuration", you hit the "Config" button.  It will give you the option of saving the current setup, or retoring the "factory setting"  (from the file chordcalc_constants.py).  The configuration is stored as a json object in the file "config"
+
+*Saving the State*
+
+The Save and Load buttons allow the user to save the current instrument, filters and capos as a named entry in the "State" list.  If an existed state is changed, the user is prompted to confirm the overwrite.  There also the option to edit the list (delete rows/reorder). The data for this list is stored in a file called "settings""
+
+
+
 
 *Capos:*
 
-The new list (lower right hand corner) allows the user to select one or more capos. When you select a capo, you are prompted for a fret to place it.  All subsequent operations acccount for the presence of the capos.  The full capo will adjust to the number of strings (except 5-string banjo, see below)  A partial capo will only fret a subset of strings.  As supplied these assume a 6-stringed instrument.  The standard partial capos predefined are the "drop E" capo that only covers 5 consecutive guitar strings (when placed on the second fret, accomplishes a drop D tuning, up a tone without retuning) and the "sus2" capo (covers the "ADG" strings or the "DGB" strings of a guitar).  Five string banjo capos are one for the "normal" four strings and a one strng capo for the 5th string.  Multiple capos are allowed.  
+The list (lower right hand corner) allows the user to select one or more capos. When you select a capo, you are prompted for a fret to place it.  All subsequent operations acccount for the presence of the capos.  The full capo will adjust to the number of strings (except 5-string banjo, see below)  A partial capo will only fret a subset of strings.  As supplied these assume a 6-stringed instrument.  The standard partial capos predefined are the "drop E" capo that only covers 5 consecutive guitar strings (when placed on the second fret, accomplishes a drop D tuning, up a tone without retuning) and the "sus2" capo (covers the "ADG" strings or the "DGB" strings of a guitar).  Five string banjo capos are one for the "normal" four strings and a one strng capo for the 5th string.  Multiple capos are allowed.  
 
-There are three modes of operation: Calc, Identify and Scale.  These are selected by the C, I and S buttons
+There are three modes of operation: Calc, Identify and Scale.  These are selected by the C, I and S buttons.  The active mode is highlighted
 
 *Calc Mode:*
 

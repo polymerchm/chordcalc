@@ -56,7 +56,7 @@ button_load					- bring up a menu to load a saved state
 import sys, os.path, re, ui, console, sound, time, math, json, dialogs
 from PIL import Image
 from copy import deepcopy
-import chordcalc_constants as ccc
+import chordcalc_constants as cccInit
 from debugStream import debugStream
 from Spinner import Spinner
 
@@ -432,11 +432,10 @@ def apply_filters(filters,fingerings):
 	
 def tuningLabel(notes):
 	'''return the notes for the current tuning'''
-	global NOTE_NAMES
 	note_string = ''
 	for note in notes:
 		note_range,base_note = divmod(note,12)
-		note_char = re.split('/', NOTE_NAMES[base_note])[0]
+		note_char = re.split('/', ccc['NOTE_NAMES'][base_note])[0]
 		if not note_range:
 			note_string += note_char
 		elif note_range == 1:
@@ -656,7 +655,7 @@ def getScaleNotes(key, chordtype, tuning, fingering):
 			for chordrelnote in chordtype:
 				chordnote = (key + chordrelnote) % 12
 				if fingerednote == chordnote:
-					scalenotes.append(SCALENOTES[chordrelnote])
+					scalenotes.append(ccc['SCALENOTES'][chordrelnote])
 	return scalenotes
 	
 def setChordSpelling():
@@ -672,7 +671,7 @@ def setChordSpelling():
 	outString = ''
 	defString = ''
 	for tone in chordTones:
-		outChar = NOTE_NAMES[(tone + key) % 12].split('/')
+		outChar = ccc['NOTE_NAMES'][(tone + key) % 12].split('/')
 		if len(outChar) == 1:
 			outChecked = outChar[0]
 		else:
@@ -685,7 +684,7 @@ def setChordSpelling():
 			else:
 				outChecked = outChar[1]
 		outString += outChecked + ' '
-		defString += SCALENOTES[tone] + ' '
+		defString += ccc['SCALENOTES'][tone] + ' '
 	mainView['lbl_fullchord'].hidden = False
 	mainView['lbl_fullchord'].text = outString.strip()
 	mainView['lbl_definition'].hidden = False
@@ -700,8 +699,8 @@ def relativeMajorDisplay():
 	except:
 		return
 	
-	if scale in TRUE_ROOT.keys():
-		text = "relative to {}".format(NOTE_NAMES[(key-TRUE_ROOT[scale])%12])
+	if scale in ccc['TRUE_ROOT'].keys():
+		text = "relative to {}".format(ccc['NOTE_NAMES'][(key-ccc['TRUE_ROOT'][scale])%12])
 		mainView['lbl_definition'].text = text		
 		mainView['lbl_definition'].hidden = False
 	else:
@@ -1049,7 +1048,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				elif self.ChordScaleFrets:
 					for string,fret_note_pairs in enumerate(self.ChordScaleFrets):
 						for fret,note in fret_note_pairs:
-							chordtone = SCALENOTES[note]
+							chordtone = ccc['SCALENOTES'][note]
 							x = self.stringX[string]
 							if fret != -1:
 								y = self.fretboardYPos(fret+1)
@@ -1082,7 +1081,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 					values = self.touched[key]
 					x = self.stringX[values[2]]
 					y = self.fretboardYPos(values[3])
-					outchar = NOTE_NAMES[values[0]%12].split('/')[0]
+					outchar = ccc['NOTE_NAMES'][values[0]%12].split('/')[0]
 					if values[3]:
 						ui.set_color('red')
 						marker= self.PathCenteredCircle(x,y,self.fingerRadius)
@@ -1122,7 +1121,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 								marker= self.PathCenteredCircle(x,y,self.fingerRadius)
 							marker.fill()
 							if self.scale_display_mode == 'degree':
-								outchar = SCALENOTES[(note - self.key) % 12]
+								outchar = ccc['SCALENOTES'][(note - self.key) % 12]
 							else:
 								outchar = self.noteName(note)
 							ui.set_color('white')
@@ -1183,25 +1182,25 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		'''return the name of the note with proper use of sharps or flats'''
 		key = self.key
 		keySig = self.keySignature
-		if keySig in CIRCLE_OF_FIFTHS.keys():
-			sf = CIRCLE_OF_FIFTHS[keySig]
+		if keySig in ccc['CIRCLE_OF_FIFTHS'].keys():
+			sf = ccc['CIRCLE_OF_FIFTHS'][keySig]
 		else:
 			console.hud_alert('{} not in COF'.format(keySig),'error',2)
 			sf = 1 if self.sharpFlatState == '#' else -1 # use preference
-		if self.scaleType in TRUE_ROOT.keys():
+		if self.scaleType in ccc['TRUE_ROOT'].keys():
 			origKeySig = keySig	
-			key = (key - TRUE_ROOT[self.scaleType]) % 12
-			keySig = NOTE_NAMES[key].split('/')
+			key = (key - ccc['TRUE_ROOT'][self.scaleType]) % 12
+			keySig = ccc['NOTE_NAMES'][key].split('/')
 			origSF = sf 
 			if len(keySig) == 1:
 				keySig = keySig[0]
 			else:
-				if origKeySig in CIRCLE_OF_FIFTHS.keys():
-					origSF = CIRCLE_OF_FIFTHS[origKeySig]
+				if origKeySig in ccc['CIRCLE_OF_FIFTHS'].keys():
+					origSF = ccc['CIRCLE_OF_FIFTHS'][origKeySig]
 				else:
 					origSF = 1 if self.sharpFlatState == '#' else -1
 			sf = origSF
-		outchar = NOTE_NAMES[note].split('/')
+		outchar = ccc['NOTE_NAMES'][note].split('/')
 		index = 0
 		if len(outchar) > 1:
 			if sf < 0:
@@ -1236,7 +1235,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 						break
 				self.touched[location] = (self.tuning['notes'][string]+fret,self.tuning['octave'],string,fret)
 				octave,tone = divmod((self.tuning['notes'][string]+fret),12)
-				waveName = 'waves/' + NOTE_FILE_NAMES[tone] + "{}.wav".format(octave+self.tuning['octave'])
+				waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave+self.tuning['octave'])
 				sound.play_effect(waveName)
 			self.set_needs_display()
 		elif self.cc_mode == 'S': # label the two octave scale starting at this root
@@ -1303,7 +1302,12 @@ class Instrument(object):
 		self.fb = fb
 		self.instrument = currentState['instrument']
 		self.is5StringBanjo = False
-		
+	
+	
+	def onEdit(self,button):
+		pass
+	
+	
 	def __getitem__(self,key):
 		try:
 			return self.tuning[key]
@@ -1407,6 +1411,10 @@ class Chord(object):
 		self.chord = currentState['chord']
 		self.fb = fb
 		
+		
+	def onEdit(self,button):
+		pass
+		
 	def __getitem__(self,key):
 		try:
 			return self.chord[key]
@@ -1479,6 +1487,9 @@ class Scale(object):
 	def __init__(self, items,fb):
 		self.items = items
 		self.fb = fb
+		
+	def onEdit(self,button):
+		pass
 		
 	def __getitem__(self,type):
 		try:
@@ -1640,16 +1651,19 @@ class Filters(ui.View):
 	def __init__(self,fb):
 		self.fb = fb
 		self.filter_list = []
-		self.items = deepcopy(FILTER_LIST_CLEAN)
+		self.items = ccc['FILTER_LIST_CLEAN']
+		
+	def onEdit(self,button):
+		pass
 	
 	def set_filters(self):
 		self.filter_list = []
-		self.items = deepcopy(FILTER_LIST_CLEAN)
+		self.items = ccc['FILTER_LIST_CLEAN']
 		it = instrument_type()
 		if it == 'guitar':
-			self.items = self.items + deepcopy(GUITAR_LIST_CLEAN) 
+			self.items = self.items + ccc['GUITAR_LIST_CLEAN']
 		elif it == 'mando':
-			self.items = self.items + deepcopy(MANDOLIN_LIST_CLEAN)
+			self.items = self.items + ccc['MANDOLIN_LIST_CLEAN']
 		else: # generic
 			pass
 		for item in self.items:
@@ -1657,8 +1671,8 @@ class Filters(ui.View):
 			
 	
 	def reconsile_filters(self,filter):
-		if filter in FILTER_MUTUAL_EXCLUSION_LIST.keys():
-			exclude = FILTER_MUTUAL_EXCLUSION_LIST[filter]
+		if filter in ccc['FILTER_MUTUAL_EXCLUSION_LIST'].keys():
+			exclude = ccc['FILTER_MUTUAL_EXCLUSION_LIST'][filter]
 			for exclusion in exclude:
 				if exclusion in self.filter_list:
 					self.filter_list.remove(exclusion)
@@ -1736,6 +1750,9 @@ class Capos(object):
 		self.capos = {}
 		currentState['capos'] = self		
 		self.fb = currentState['fretboard']
+	
+	def onEdit(self,button):
+		pass
 		
 	def __getitem__(self,key):
 		try:
@@ -1968,7 +1985,7 @@ def play(button):
 			pass
 			
 		for tone,octave in tones:
-			waveName = 'waves/' + NOTE_FILE_NAMES[tone] + "{}.wav".format(octave)
+			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave)
 			sound.play_effect(waveName)
 			time.sleep(0.05)
 			if button.name == 'button_arp':
@@ -1992,7 +2009,7 @@ def play_tuning(button):
 			octave,tone = divmod(string,12)
 			tones.append((tone,octave+baseOctave))
 		for tone,octave in tones:
-			waveName = 'waves/' + NOTE_FILE_NAMES[tone] + "{}.wav".format(octave)
+			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave)
 			sound.play_effect(waveName)
 			time.sleep(fretboard.arpSpeed)
 			
@@ -2002,7 +2019,7 @@ def playScale(button):
 	if os.path.exists('waves') and fretboard.scaleFrets:
 		for string,fret in fretboard.scaleFrets:
 			octave,tone = divmod((fretboard.tuning['notes'][string]+fret),12)
-			waveName = 'waves/' + NOTE_FILE_NAMES[tone] + "{}.wav".format(octave+fretboard.tuning['octave'])
+			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave+fretboard.tuning['octave'])
 			sound.play_effect(waveName)	
 			time.sleep(fretboard.arpSpeed)
 
@@ -2021,17 +2038,17 @@ def toggle_mode(button):
 	mode = button.title
 	hideshow = {}
 	hideshow = {'I':  {'hide':
-	                					'tableview_root tableview_type tableview_scale label1 label_type_scale button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span'.split(),
+	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span'.split(),
 											'show':
 														('tableview_find', 'button_find', 'button_chord', 'button_arp')
 										},						
  							'C':	{'hide':
 										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat'.split(),
-										'show': 'tableview_root tableview_type label1 label_type_scale chord_num num_chords label_middle button_chord button_arp sp_span lbl_span'.split()
+										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span'.split()
 										},
 							'S': 	{'hide': 
 										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span'.split(),
-											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes label_type_scale button_play_scale btn_sharpFlat'.split()
+											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat'.split()
 										}
 								}
 
@@ -2047,14 +2064,17 @@ def toggle_mode(button):
 	for view in mode_hs['hide']:		
 		mainView[view].hidden = True
 	for view in mode_hs['show']:			
-		mainView[view].hidden = False
+		try:
+			mainView[view].hidden = False
+		except:
+			print view
 	
 	if mode == 'C': # special stuff for identify
-		mainView['label_type_scale'].text = 'type'
+		mainView['button_edit_chord'].title = 'type'
 	elif mode == 'S':
-		mainView['label_type_scale'].text = 'mode'
+		mainView['button_edit_chord'].title = 'mode'
 	else: # 'I'
-		mainView['label_type_scale'].text = ''		
+		mainView['button_edit_chord'].title = ''		
 		tvFind.data_source.items = []
 		
 	fretboard.set_needs_display()
@@ -2086,18 +2106,18 @@ def find_chords(button):
 				present[i] = True if note in fingered else False
 				if present[i]: 
 					notevals.append(i)
-			for chord in CHORDTYPE:
+			for chord in ccc['CHORDTYPE']:
 				deltas = set(notevals) ^ set(chord[1]) #those notes not in both (symmetric difference)
 				if not deltas:
-					pure.append("{}{}".format(NOTE_NAMES[root],chord[0]))
+					pure.append("{}{}".format(ccc['NOTE_NAMES'][root],chord[0]))
 				if deltas == set([0]):
-					missing_1.append("{}{} (no root)".format(NOTE_NAMES[root],chord[0]))
+					missing_1.append("{}{} (no root)".format(ccc['NOTE_NAMES'][root],chord[0]))
 				if deltas == set([3]) or deltas == set([4]):
-					missing_1.append("{}{} (no 3rd)".format(NOTE_NAMES[root],chord[0]))				
+					missing_1.append("{}{} (no 3rd)".format(ccc['NOTE_NAMES'][root],chord[0]))				
 				if deltas == set([7]):
-					missing_1.append( "{}{} (no 5th)".format(NOTE_NAMES[root],chord[0]))
+					missing_1.append( "{}{} (no 5th)".format(ccc['NOTE_NAMES'][root],chord[0]))
 				if deltas == set([0,7]):
-					missing_2.append("{}{} (no root or 5th)".format(NOTE_NAMES[root],chord[0]))
+					missing_2.append("{}{} (no root or 5th)".format(ccc['NOTE_NAMES'][root],chord[0]))
 		for list in [pure,missing_1,missing_2]:
 			if list:
 				chord_list += list
@@ -2192,20 +2212,21 @@ def onLoadState(button):
 	pass
 	
 def createConfig():
+	global ccc
 	if os.path.exists('config'):
 		try:
-			resp = console.alert('Restore the "factory settings"?','OK')
+			resp = console.alert('config exists','Restore the "factory settings"?','OK')
 			os.remove('config')
 		except KeyboardInterrupt as e:
 			return
 # read in the non-local data and write it out as a json object
-	ccc_constants = {}
-	for constant in ccc.__dict__.keys():
-	if constant[0].isupper: # a real constant
-		ccc_constants[constant] = ccc._dict_[constant]
-		
+	ccc = {}
+	for constant in cccInit.__dict__.keys():
+		if constant[0] != '_' and constant[0].isupper(): # a real constant
+			ccc[constant] = cccInit.__dict__[constant]
+			
 	fh = open('config','wb')
-	fh.write(json.dump(ccc_constants))
+	json.dump(ccc,fh)
 	fh.close()
 		
 
@@ -2213,10 +2234,13 @@ def createConfig():
 		
 	
 def restoreConfig():
-	if os.path.exists('config'):
-		console.hud_alert('config file missing, restoring',2)
+	global ccc
+	if not os.path.exists('config'):
+		console.hud_alert('config file missing, restoring','error',2)
 		createConfig()
-	
+	fh = open('config','rb')
+	ccc = json.load(fh)
+		
 		
 ##############################################
 ##############################################
@@ -2235,40 +2259,45 @@ if __name__ == "__main__":
 		
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
+	
 	num_chords = mainView['num_chords']
 	chord_num = mainView['chord_num']
 	middle_field = mainView['label_middle']
 	fretboard = mainView['fretboard']
 	tvRoot = mainView['tableview_root']
-	root_list = deepcopy(ROOT_LIST_CLEAN)
+	root_list = ccc['ROOT_LIST_CLEAN']
 	root = Root(root_list,fretboard)
 	tvRoot.data_source = tvRoot.delegate = root
 	
 	tvType = mainView['tableview_type']
-	chord_list = deepcopy(CHORD_LIST_CLEAN)
+	chord_list = ccc['CHORD_LIST_CLEAN']
 	chord = Chord(chord_list,fretboard)
 	chord.reset()
 	tvType.data_source = tvType.delegate = chord
+	mainView['button_edit_chord'].action = chord.onEdit
 	
 	tvInst = mainView['tableview_inst_tune']
 	tuningDisplay = mainView['button_tuning']
 	tuningDisplay.title = ''
 	tuningDisplay.action = play_tuning
 
+
 	# fretboard is a custom view and is instanciated by the ui.load_view process
-	tuning_list = deepcopy(TUNING_LIST_CLEAN)
+	tuning_list = ccc['TUNING_LIST_CLEAN']
 	instrument = Instrument(tuning_list,fretboard)
+	mainView['button_edit_instrument'].action = instrument.onEdit
 	instrument.reset()
 	tvInst.data_source = tvInst.delegate = fretboard.instrument = instrument
 	
 	tvFilters = mainView['tableview_filters']
-	filter_list = deepcopy(FILTER_LIST_CLEAN)
+	filter_list = ccc['FILTER_LIST_CLEAN']
 	filters = Filters(fretboard)
 	instrument.tvFilters = tvFilters
 	instrument.filters = filters
 	filters.instrument = instrument
 	tvFilters.data_source = tvFilters.delegate = filters
 	tvFilters.hidden = False
+	mainView['button_edit_filters'].action = filters.onEdit
 
 	tvFind = mainView['tableview_find']
 	tvFind.data_source.items = []
@@ -2277,7 +2306,7 @@ if __name__ == "__main__":
 	tvScale = mainView['tableview_scale']
 	tvScale.data_source.items = []
 	tvScale.hidden = True	
-	scale_list = deepcopy(SCALE_LIST_CLEAN)
+	scale_list = ccc['SCALE_LIST_CLEAN']
 	scale = Scale(scale_list,fretboard)
 	tvScale.data_source = tvScale.delegate = scale
 	
@@ -2309,14 +2338,15 @@ if __name__ == "__main__":
 	currentState['mainView'] = mainView
 	
 	tvCapos = mainView['tableview_capos']
-	capo_list = deepcopy(CAPOS)
+	capo_list = ccc['CAPOS']
 	capos = Capos(capo_list)
+	mainView['button_edit_capos'].action = capos.onEdit
 	tvCapos.data_source = tvCapos.delegate = capos
 	
 	spanSpinner = Spinner(frame=(12,10,122,73),
 	                      name='sp_span',
-	                      initialValue=SPAN_DEFAULT_UNKNOWN,
-	                      limits=(2,SPAN_DEFAULT_UNKNOWN+2),
+	                      initialValue=ccc['SPAN_DEFAULT_UNKNOWN'],
+	                      limits=(2,ccc['SPAN_DEFAULT_UNKNOWN']+2),
 	                      action=onSpanSpinner)
 	mainView.add_subview(spanSpinner)
 	spanSpinner.frame = (559,443,122,73)
