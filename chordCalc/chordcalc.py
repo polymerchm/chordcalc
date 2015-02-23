@@ -51,6 +51,8 @@ btn_sharpFlat				- forces shaprs for flats for non-standard keys (not in the cir
 sp_span							- spinner for changing the span and recalculating chords based on span
 button_save					- bring up a menu to save the current state of the filters, capos and instrument
 button_load					- bring up a menu to load a saved state
+button_config				- save current configuration
+button_new					- brings up the instrument builder
 """
 
 import sys, os.path, re, ui, console, sound, time, math, json, dialogs
@@ -59,7 +61,7 @@ from copy import deepcopy
 import chordcalc_constants as cccInit
 from debugStream import debugStream
 from Spinner import Spinner
-
+from Shield import Shield
 
 
 
