@@ -2201,7 +2201,12 @@ def applyState(state):
 	instrument.updateScaleChord()
 	
 	
+class SettingsView(ui.View):
+	pass
 	
+	
+class InstrumentEditor(ui.View):
+	pass
 	
 	
 		
@@ -2241,6 +2246,9 @@ def restoreConfig():
 	fh = open('config','rb')
 	ccc = json.load(fh)
 		
+		
+		
+
 		
 ##############################################
 ##############################################
@@ -2357,6 +2365,9 @@ if __name__ == "__main__":
 	
 	mainView['button_save'].action = onSaveState
 	mainView['button_load'].action = onLoadState
+	
+	mainView['view_settingsView'].hidden = True
+	mainView['view_instrumentEditor'].hidden = True
 	
 	
 	
