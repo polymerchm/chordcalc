@@ -60,6 +60,7 @@ class Spinner(ui.View):
 		self.fontSize = fontSize
 		self.textWidth = int(self.textFraction*spinnerSize[1])
 		self.buttonSize  = (int((1.0 - self.textFraction)*self.spinnerSize[0]), int(0.5*self.spinnerSize[1]))
+		self.textSize =  (int(self.textFraction*self.spinnerSize[0]), spinnerSize[1])
 		self.name = name
 		self.add_ui()
 
@@ -69,21 +70,22 @@ class Spinner(ui.View):
 		self.border_color = 'black'
 		self.border_width = 1
 
-		txtLocation = tuple(map(add,self.text_size,(self.frame[0],self.frame[1],0,0)))
+		txtLocation = (0,0)+self.textSize
 		self.label = make_label(self._value, txtLocation)
+		self.label.font = ('<system>',self.fontSize)
 		self.add_subview(self.label)
 
 		txtOriginX,txtOriginY, txtWidth, txtHeight = txtLocation
 
 		arrowX = txtOriginX + txtWidth + self.frame[0]
 		upArrowY = txtOriginY
-		dnArrowY = txtOriginY + txtHeight-self.button_size[3]
+		dnArrowY = txtOriginY + txtHeight-self.buttonSize[1]
 
-		upLocation = tuple(map(add,self.button_size,(arrowX,upArrowY,0,0)))
+		upLocation = (arrowX,upArrowY)+self.buttonSize
 		self.upArrow = make_button('upBtn', 'ionicons-arrow-up-b-24', frame=upLocation)
 		self.upArrow.action = self.onArrow
 		self.add_subview(self.upArrow)
-		dnLocation = tuple(map(add,self.button_size,(arrowX,dnArrowY,0,0)))
+		dnLocation = (arrowX,dnArrowY) + self.buttonSize
 		self.downArrow = make_button('downBtn', 'ionicons-arrow-down-b-24', frame=dnLocation)
 		self.downArrow.action = self.onArrow
 		self.add_subview(self.downArrow)
@@ -96,6 +98,9 @@ class Spinner(ui.View):
 		else: # a scalar
 			if self._limits[0] <= self._value + self.increment <= self._limits[1]:
 				self.label.text = str(self._value)
+				
+	def position(self,position):
+		self.frame = position + tuple(self.frame[2:])
 
 	@property
 	def value(self):
@@ -150,11 +155,13 @@ if __name__ == '__main__':
 		print spinner.value
 
 	view = ui.View(background_color = 'white')
-	spinner1 = Spinner(name='Spinner1',initialValue = "this is a test".split())
-	spinner2 = Spinner(name='Spinner2',initialValue = 0, increment = 2, limits = (-10,10),action=spinnerPrint)
+	spinner1 = Spinner(name='Spinner1',
+	                   initialValue = "this is a test".split(),spinnerSize=(60,30),textFraction=0.50,fontSize=16)
+	spinner2 = Spinner(name='Spinner2',initialValue = 0, increment = 2, 
+	                   limits = (-10,10),action=spinnerPrint)
 	view.present('full_screen')
-	spinner1.frame = (110,150,100,80)
-	spinner2.frame = (300,150,100,80)
+	spinner1.position((110,150))
+	spinner2.position((300,150))
 	view.add_subview(spinner1)
 	view.add_subview(spinner2)
 	spinner1.value = 9
