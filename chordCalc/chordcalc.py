@@ -2351,13 +2351,15 @@ if __name__ == "__main__":
 	mainView['button_edit_capos'].action = capos.onEdit
 	tvCapos.data_source = tvCapos.delegate = capos
 	
-	spanSpinner = Spinner(frame=(12,10,122,73),
+	spanSpinner = Spinner(spinnerSize=(100,50),
+	                      
 	                      name='sp_span',
+	                      fontSize = 18,
 	                      initialValue=ccc['SPAN_DEFAULT_UNKNOWN'],
 	                      limits=(2,ccc['SPAN_DEFAULT_UNKNOWN']+2),
 	                      action=onSpanSpinner)
 	mainView.add_subview(spanSpinner)
-	spanSpinner.frame = (559,443,122,73)
+	spanSpinner.position((580,443))
 	
 	mainView['view_fretEnter'].hidden = True
 	mainView['sp_span'].hidden = True

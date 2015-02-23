@@ -1,4 +1,4 @@
- Sheild 
+#Sheild 
 # covers the designated view to suppress touch events. 
 
 import ui
@@ -8,15 +8,21 @@ class Shield(object):
 		self.view = view
 		self.shield = ui.View(frame=view.bounds,background_color=(1.0, 1.0, 1.0, 0.7),flex='WH')
 		self.shield.frame = self.view.frame
+		self.status = False
+
+	def isActive(self):
+		return self.status
 
 
 	def conceal(self): # ui seems to ignore multiple requests to add the same subview.  Good.
+		self.status = True
 		if self.view.superview:
 			self.view.superview.add_subview(self.shield)
 		else: #its the root view
 			self.view.add_subview(self.shield)
 
 	def reveal(self): #ui is also happy to ignore requests to remove an non-existant subview.  Also good.
+		self.status = False
 		if self.view.superview:
 			self.view.superview.remove_subview(self.shield)
 		else: #see above
