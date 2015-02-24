@@ -245,13 +245,13 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 						thisString += 1
 						thisIndex = nextIndex
 						continue # next tone
+				if mode == 'FourOnString' and thisStringCount == 4:
+					thisString += 1
+					scaleNotes.append((thisString,nextFret))
+					thisIndex = nextIndex
+					thisStringCount = 1
+					continue
 				if thisDelta < nextDelta: # stay in this string
-					if mode == 'FourOnString' and thisStringCount == 4:
-						thisString += 1
-						scaleNotes.append((thisString,nextFret))
-						thisIndex = nextIndex
-						thisStringCount = 1
-						continue
 					scaleNotes.append((thisString,thisFret))
 					if mode == 'down':
 						referenceFret = thisFret
@@ -263,38 +263,13 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 					thisIndex = nextIndex
 					nextIndex = 0
 					thisStringCount = 1
-			else: #just on first string
+			else: #just on this string
 				scaleNotes.append((thisString,fretsOnStrings[thisString][thisIndex]))
 				thisStringCount += 1
 				if mode == 'down':
-					referenceFret = fretsOnStrings[thisString][thisIndex]
-				
+					referenceFret = fretsOnStrings[thisString][thisIndex]				
 	return scaleNotes	
-			
-					
-					
-				
-#	
-#	
-#	for string in range(thisString,numStrings): # look at next string always
-#		for thisI in range(thisIndex+1,len(fretsOnStrings[0])):
-#			thisStringNote = notesOnStrings[string][thisI]
-#			if string == numStrings - 1: # rightmost string, so force to never check
-#				nextStringNote = 100 # current tone always "smaller"
-#			else:
-#				nextStringNote =  notesOnStrings[string+1][0]
-#			if nextStringNote != thisStringNote: # continue on this string
-#				scaleNotes.append((string,fretsOnStrings[string][thisI]))
-#				if len(scaleNotes) == numNotes:
-#					return scaleNotes
-#			else:
-#				scaleNotes.append((string+1,fretsOnStrings[string+1][0]))
-#				if len(scaleNotes) == numNotes: 
-#					return scaleNotes
-#				thisIndex = 0
-#				nextIndex = 0
-#				break
-	return scaleNotes
+
 
 def calc_chord_scale():
 	global currentState
