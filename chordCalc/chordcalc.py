@@ -162,7 +162,7 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 		fretboard = currentState['fretboard']
 	except:
 		return None
-	mode = 'FourOnString'
+		
 	intervals = [0]
 	for letter in scaleintervals:
 		if letter == 'S':
@@ -829,8 +829,10 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.fretY = []
 		self.PrevFretY = 0
 		self.touched = {} # a dictionary of touched fret/string tuples as keys, note value
+		self.location = (0,0)
 		self.cc_mode = 'C' # versus 'identify6'
 		self.scale_display_mode = 'degree'
+		self.scale_mode = 'normal'
 		self.showChordScale = False
 		self.ChordScaleFrets = []
 		self.arpMin = 0.05
@@ -1331,12 +1333,12 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 			x,y = touch.location
 			string = self.closest(x,self.stringX)
 			fret = self.closest(y,self.fretY)
-			location = (string,fret)
+			self.location = (string,fret)
 			octave,tone = divmod((self.tuning['notes'][string]+fret),12)
 			if tone != self.key: 
 				sound.play_effect('Drums_01')
 				return None
-			self.scaleFrets = calc_two_octave_scale(location)
+			self.scaleFrets = calc_two_octave_scale(self.location,mode=self.scale_mode)
 			self.set_needs_display()
 		elif self.cc_mode == 'C': # switch display to chord tones
 			self.showChordScale = not self.showChordScale
@@ -2127,17 +2129,17 @@ def toggle_mode(button):
 	mode = button.title
 	hideshow = {}
 	hideshow = {'I':  {'hide':
-	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span'.split(),
+	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span sp_scale'.split(),
 											'show':
 														('tableview_find', 'button_find', 'button_chord', 'button_arp')
 										},						
  							'C':	{'hide':
-										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat'.split(),
+										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat sp_scale'.split(),
 										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span'.split()
 										},
 							'S': 	{'hide': 
 										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span'.split(),
-											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat'.split()
+											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat sp_scale'.split()
 										}
 								}
 
@@ -2337,7 +2339,10 @@ def restoreConfig():
 		
 		
 		
-
+def onScaleSpinner(sender):
+	fretboard.scale_mode = sender.value
+	fretboard.scaleFrets = calc_two_octave_scale(fretboard.location,mode=fretboard.scale_mode)
+	fretboard.set_needs_display()
 		
 ##############################################
 ##############################################
@@ -2449,6 +2454,15 @@ if __name__ == "__main__":
 	                      action=onSpanSpinner)
 	mainView.add_subview(spanSpinner)
 	spanSpinner.position((580,443))
+	
+	scaleSpinner = Spinner(spinnerSize=(120,40),
+	                       name='sp_scale',
+	                       fontSize = 12,
+	                       initialValue=['normal','down','open','FourOnString'],
+	                       action=onScaleSpinner)
+	mainView.add_subview(scaleSpinner)
+	scaleSpinner.position((570,300))
+	scaleSpinner.hidden = True
 	
 	mainView['view_fretEnter'].hidden = True
 	mainView['sp_span'].hidden = True
