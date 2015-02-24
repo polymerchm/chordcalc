@@ -144,9 +144,15 @@ def calc_fingerings():
 		console.hide_activity()
 	return result
 			
-def calc_two_octave_scale(startingStringFret):
+def calc_two_octave_scale(startingStringFret,mode='normal'):
 	''' given a starting (string,scaletoneIndex) calculate a two octave scale across the strings
-	    returns a 2D tupple of strings and frets'''
+	    returns a 2D tupple of strings and frets
+	    modes: 
+	    			normal 				: referenceFret is the starting fret
+	          down   				: referenceFret continually updated
+	          open   				: favor open strings
+	          FourOnString 	: favor 4 notes per string (max)'''
+	          
 	global currentState
 	try:
 		key = currentState['root']['noteValue']
@@ -156,7 +162,7 @@ def calc_two_octave_scale(startingStringFret):
 		fretboard = currentState['fretboard']
 	except:
 		return None
-		
+	mode = 'FourOnString'
 	intervals = [0]
 	for letter in scaleintervals:
 		if letter == 'S':
@@ -173,40 +179,121 @@ def calc_two_octave_scale(startingStringFret):
 		notesInScale.append(nextNote % 12)
 		
 	scale_notes = fretboard.scale_notes
-	notesOnStrings = []
 	fretsOnStrings = [] 
+	tonesOnStrings = []
 	
-	for string in scale_notes:
-		notes = [x[1] for x in string]
-		notesOnStrings.append(notes)
+	for i,string in enumerate(scale_notes):
 		frets = [x[0] for x in string]
 		fretsOnStrings.append(frets)
+		tones = [x[0] + tuning[i] for x in string]
+		tonesOnStrings.append(tones)
+	
+	tonesOnStrings.append([-1 for x in range(len(tonesOnStrings[0]))])
 	
 	numNotes = 2*len(scaleintervals) + 1
 	numStrings = len(tuning)
 	thisString,thisStringFret = startingStringFret
+	
+	tone = thisStringFret + tuning[thisString]
+	tonesInTwoOctaveScale = [tone]
+	for octave in [1,2]:
+		for interval in intervals[1:]:
+			tone += interval
+			tonesInTwoOctaveScale.append(tone)
+	referenceFret = thisStringFret # used to anchor the scale
 	thisIndex = fretsOnStrings[thisString].index(thisStringFret)
 	scaleNotes = [startingStringFret]
-	nextStringNote = notesOnStrings[1][0]
+	thisStringCount = 1
+	nextStringNote = scale_notes[thisString+1][1]
+	nextIndex = 0
 	# always look to see if next note is on next string
-	for string in range(thisString,numStrings): # look at next string always
-		for thisI in range(thisIndex+1,len(fretsOnStrings[0])):
-			thisStringNote = notesOnStrings[string][thisI]
-			if string == numStrings - 1: # rightmost string, so force to never check
-				nextStringNote = 100 # current tone always "smaller"
-			else:
-				nextStringNote =  notesOnStrings[string+1][0]
-			if nextStringNote != thisStringNote: # continue on this string
-				scaleNotes.append((string,fretsOnStrings[string][thisI]))
-				if len(scaleNotes) == numNotes:
+	for nextTone in tonesInTwoOctaveScale[1:]: # first tone already in place		
+		try:
+			thisIndex = tonesOnStrings[thisString][thisIndex:].index(nextTone) + thisIndex
+			onThisString = True
+		except ValueError:
+			onThisString = False 
+		try: 
+			nextIndex = tonesOnStrings[thisString+1][nextIndex:].index(nextTone) + nextIndex
+			onNextString = True
+		except ValueError:
+			nextIndex = 0
+			onNextString = False
+
+		if not onThisString: #not on this string
+			if not onNextString: # nor here, must be done.
+				return scaleNotes
+			else: # not on current string, is on next string, save and update
+				scaleNotes.append((thisString+1,fretsOnStrings[thisString+1][nextIndex]))
+				if mode == 'down':
+					referenceFret = fretsOnStrings[thisString+1][nextIndex]
+				thisString += 1
+				if thisString == numStrings + 1: # on phantom string
 					return scaleNotes
-			else:
-				scaleNotes.append((string+1,fretsOnStrings[string+1][0]))
-				if len(scaleNotes) == numNotes: 
-					return scaleNotes
-				thisIndex = 0
+				thisIndex = nextIndex
 				nextIndex = 0
-				break
+				thisStringCount = 1
+		else:
+			if onNextString: # On both strings
+				thisFret = fretsOnStrings[thisString][thisIndex]
+				nextFret = fretsOnStrings[thisString+1][nextIndex]
+				thisDelta = abs(referenceFret - thisFret)
+				nextDelta = abs(referenceFret - nextFret)
+				if mode == 'open':
+					if nextFret == 0:
+						scaleNotes.append((thisString+1,0))
+						thisString += 1
+						thisIndex = nextIndex
+						continue # next tone
+				if thisDelta < nextDelta: # stay in this string
+					if mode == 'FourOnString' and thisStringCount == 4:
+						thisString += 1
+						scaleNotes.append((thisString,nextFret))
+						thisIndex = nextIndex
+						thisStringCount = 1
+						continue
+					scaleNotes.append((thisString,thisFret))
+					if mode == 'down':
+						referenceFret = thisFret
+				else:
+					thisString += 1
+					scaleNotes.append((thisString,nextFret))
+					if mode == 'down':
+						referenceFret = nextFret
+					thisIndex = nextIndex
+					nextIndex = 0
+					thisStringCount = 1
+			else: #just on first string
+				scaleNotes.append((thisString,fretsOnStrings[thisString][thisIndex]))
+				thisStringCount += 1
+				if mode == 'down':
+					referenceFret = fretsOnStrings[thisString][thisIndex]
+				
+	return scaleNotes	
+			
+					
+					
+				
+#	
+#	
+#	for string in range(thisString,numStrings): # look at next string always
+#		for thisI in range(thisIndex+1,len(fretsOnStrings[0])):
+#			thisStringNote = notesOnStrings[string][thisI]
+#			if string == numStrings - 1: # rightmost string, so force to never check
+#				nextStringNote = 100 # current tone always "smaller"
+#			else:
+#				nextStringNote =  notesOnStrings[string+1][0]
+#			if nextStringNote != thisStringNote: # continue on this string
+#				scaleNotes.append((string,fretsOnStrings[string][thisI]))
+#				if len(scaleNotes) == numNotes:
+#					return scaleNotes
+#			else:
+#				scaleNotes.append((string+1,fretsOnStrings[string+1][0]))
+#				if len(scaleNotes) == numNotes: 
+#					return scaleNotes
+#				thisIndex = 0
+#				nextIndex = 0
+#				break
 	return scaleNotes
 
 def calc_chord_scale():
