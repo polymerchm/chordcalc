@@ -33,7 +33,8 @@ class Spinner(ui.View):
 											initialValue= 10,
 											increment=1,
 											limits=(0,100),
-											action=None,
+											action=None, # done if action was successful
+											limitAction=None, #done if hit a limit
 											textFraction = 0.75,
 											fontSize = 12,
 											spinnerSize=(80,80)
@@ -47,6 +48,7 @@ class Spinner(ui.View):
 			raise ValueError("initalValue {} outside of limits {}".format(self._value,limits))
 		self.increment = increment
 		self._limits = limits
+		self._position = (0,0)
 
 		if self.dataType in (list,tuple):
 			self.list = [x for x in initialValue]
@@ -54,6 +56,7 @@ class Spinner(ui.View):
 			self.increment = 1
 			self._pointer = 0
 		self.action = action
+		self.limitAction = limitAction
 		self.textFraction = textFraction
 		self.spinnerSize = spinnerSize
 		self.frame = (0,0)+(self.spinnerSize)
@@ -89,7 +92,6 @@ class Spinner(ui.View):
 		self.downArrow = make_button('downBtn', 'ionicons-arrow-down-b-24', frame=dnLocation)
 		self.downArrow.action = self.onArrow
 		self.add_subview(self.downArrow)
-		if self.action: self.action(self)
 
 	def updateLabel(self):
 		if self.dataType in [list,tuple]:
@@ -99,8 +101,14 @@ class Spinner(ui.View):
 			if self._limits[0] <= self._value + self.increment <= self._limits[1]:
 				self.label.text = str(self._value)
 				
-	def position(self,position):
-		self.frame = position + tuple(self.frame[2:])
+	@property
+	def position(self):
+		return self._position
+		
+	@position.setter
+	def position(self,value):
+		self._position = value
+		self.frame = value + tuple(self.frame[2:])
 
 	@property
 	def value(self):
@@ -139,11 +147,16 @@ class Spinner(ui.View):
 				self._value = self.list[self._pointer]
 				self.label.text = str(self._value)
 				if self.action: self.action(self)
+			else:
+				print "hit list limt"
+				if self.limitAction: self.limitAction(self)
 		else: # a scalar
 			if self._limits[0] <= self._value + increment <= self._limits[1]:
 				self._value += increment
 				self.label.text = str(self._value)
 				if self.action: self.action(self)
+			else:
+				if self.limitAction: self.limitAction(self)
 
 	def reset(self):
 		self._value = self.initialValue
@@ -153,15 +166,19 @@ if __name__ == '__main__':
 
 	def spinnerPrint(spinner):
 		print spinner.value
+		
+	def hitLimit(spinner):
+		import console
+		console.hud_alert('stop!!!')
 
 	view = ui.View(background_color = 'white')
 	spinner1 = Spinner(name='Spinner1',
 	                   initialValue = "this is a test".split(),spinnerSize=(60,30),textFraction=0.50,fontSize=16)
 	spinner2 = Spinner(name='Spinner2',initialValue = 0, increment = 2, 
-	                   limits = (-10,10),action=spinnerPrint)
+	                   limits = (-10,10),action=spinnerPrint, limitAction=hitLimit)
 	view.present('full_screen')
-	spinner1.position((110,150))
-	spinner2.position((300,150))
+	spinner1.position = (110,150)
+	spinner2.position = (300,150)
 	view.add_subview(spinner1)
 	view.add_subview(spinner2)
 	spinner1.value = 9

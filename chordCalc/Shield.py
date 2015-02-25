@@ -9,7 +9,7 @@ class Shield(object):
 		self.shield = ui.View(frame=view.bounds,background_color=(1.0, 1.0, 1.0, 0.7),flex='WH')
 		self.shield.frame = self.view.frame
 		self.status = False
-
+		
 	def isActive(self):
 		return self.status
 

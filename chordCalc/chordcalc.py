@@ -56,12 +56,14 @@ button_new					- brings up the instrument builder
 """
 
 import sys, os.path, re, ui, console, sound, time, math, json, dialogs
+from operator import add,mul
 from PIL import Image
 from copy import deepcopy
+import chordcalc_constants; reload(chordcalc_constants)
 import chordcalc_constants as cccInit
-from debugStream import debugStream
-from Spinner import Spinner
-from Shield import Shield
+import debugStream; reload(debugStream); 	from debugStream import debugStream
+import Spinner; 		reload(Spinner); 			from Spinner import Spinner
+import Shield; 			reload(Shield); 			from Shield import Shield
 
 
 
@@ -203,7 +205,7 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 	referenceFret = thisStringFret # used to anchor the scale
 	thisIndex = fretsOnStrings[thisString].index(thisStringFret)
 	scaleNotes = [startingStringFret]
-	thisStringCount = 1
+	thisStringCount = 1 if thisStringFret else 0
 	nextStringNote = scale_notes[thisString+1][1]
 	nextIndex = 0
 	# always look to see if next note is on next string
@@ -224,15 +226,16 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 			if not onNextString: # nor here, must be done.
 				return scaleNotes
 			else: # not on current string, is on next string, save and update
-				scaleNotes.append((thisString+1,fretsOnStrings[thisString+1][nextIndex]))
+				nextFret = fretsOnStrings[thisString+1][nextIndex]
+				scaleNotes.append((thisString+1,nextFret))
 				if mode == 'down':
-					referenceFret = fretsOnStrings[thisString+1][nextIndex]
+					referenceFret = nextFret
 				thisString += 1
 				if thisString == numStrings + 1: # on phantom string
 					return scaleNotes
 				thisIndex = nextIndex
 				nextIndex = 0
-				thisStringCount = 1
+				thisStringCount = 1 if nextFret else 0
 		else:
 			if onNextString: # On both strings
 				thisFret = fretsOnStrings[thisString][thisIndex]
@@ -249,7 +252,7 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 					thisString += 1
 					scaleNotes.append((thisString,nextFret))
 					thisIndex = nextIndex
-					thisStringCount = 1
+					thisStringCount = 1 if nextFret else 0
 					continue
 				if thisDelta < nextDelta: # stay in this string
 					scaleNotes.append((thisString,thisFret))
@@ -264,8 +267,10 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 					nextIndex = 0
 					thisStringCount = 1
 			else: #just on this string
-				scaleNotes.append((thisString,fretsOnStrings[thisString][thisIndex]))
-				thisStringCount += 1
+				thisFret = fretsOnStrings[thisString][thisIndex]
+				scaleNotes.append((thisString,thisFret))
+				if thisFret: #don't count open string as a fingerednote
+					thisStringCount += 1
 				if mode == 'down':
 					referenceFret = fretsOnStrings[thisString][thisIndex]				
 	return scaleNotes	
@@ -2269,11 +2274,154 @@ def applyState(state):
 	
 class SettingsView(ui.View):
 	pass
+		
 	
 	
 class InstrumentEditor(ui.View):
-	pass
+	def did_load(self):
+		self.spinnerArray = []
+		self.octaveTextArray = []
+		self.textField = self['txt_title']
+		self.octaveTextField = self['txt_octave']
+		self.tuningButton = self['btn_tuning']
+		self.notes = []
+		self.octaves = []
+		self['button_IE_OK'].action = self.onOkay
+		self['button_IE_Cancel'].action = self.onCancel
+		self['label1'].background_color = self['label2'].background_color = self.background_color
+		self['label3'].background_color = self.background_color
+		self.maxOctave = 7
+		self.maxPointer = len(ccc['NOTE_FILE_NAMES']) -1
 	
+	def onNewInstrument(self,sender):
+		''' allow editing of new instrument based on current instrument'''
+		thisInstrument = currentState['instrument']
+		try:
+			notes = thisInstrument['notes']
+		except TypeError: # no instrument chosen
+			return
+		
+		mainViewShield.conceal()
+		numStrings = len(notes)
+		self.span = thisInstrument['span']
+		self.row = thisInstrument['row']
+		self.octave = thisInstrument['octave']
+		self.textField.text = thisInstrument['title']
+		self.octaveTextField.text = "{}".format(self.octave)
+		spinnerWidth = min(75,int(self.width/float(numStrings)))
+		space = self.width - numStrings*spinnerWidth
+		spacer = int(space/float(numStrings + 1))
+		self.notes = [note for note in notes]
+		self.octaves = [divmod(note,12)[0] for note in notes]
+		self.spinnerFactor = 0.17
+		for i in range(numStrings):
+			temp = Spinner(name="string{}".format(i),
+			               initialValue = ccc['NOTE_NAMES'],
+			               spinnerSize = (spinnerWidth,40),
+			               fontSize = 16,
+			               action=self.onSpinner,
+			               limitAction=self.onSpinnerLimit
+			               )
+			temp.pointer = notes[i] % 12
+
+			tempOctave = ui.TextField(name='octave{}'.format(i),
+			                          frame=(0,0,40,32),
+			                          )
+			tempOctave.text = "{}".format(self.octaves[i])
+			temp.position = (spacer+i*(spacer+spinnerWidth), int(self.spinnerFactor*self.height))
+			location = (spacer+i*(spacer+spinnerWidth),int(self.spinnerFactor*self.height+42),0.0,0.0)
+			tempOctave.frame = tuple(map(add,tuple(location),tuple(tempOctave.frame)))
+			self.add_subview(temp)
+			self.add_subview(tempOctave)
+			self.spinnerArray.append(temp)
+			self.octaveTextArray.append(tempOctave)
+		newSpanSpinner = Spinner(name='EIspanSpinner',
+		                         initialValue = self.span,
+		                         limits=(2,self.span+2),
+		                         spinnerSize = (spinnerWidth,32),
+		                         fontSize = 16
+		                         )
+		newSpanSpinner.position = (240,185)
+		self.add_subview(newSpanSpinner)
+		self.tuningButton.action = self.playTuning
+		self.update_tuning_label()
+		self.hidden  = False
+		self.bring_to_front()	
+		
+		
+	def onOkay(self,sender):
+		pass
+		
+	def onCancel(self,sender):
+		self.hidden = True
+		for subview in self.spinnerArray:
+			self.remove_subview(subview)
+		for subview in self.octaveTextArray:
+			self.remove_subview(subview)
+		mainViewShield.reveal()
+		
+	def update_tuning_label(self):
+		pointers = [spinner.pointer for spinner in self.spinnerArray]
+		octaves = [int(tf.text) for tf in self.octaveTextArray]
+		def mulby12(item):
+			return item*12
+		notes = map(add,pointers,map(mulby12,octaves))
+		label = tuningLabel(notes)
+		self.tuningButton.title = label
+		
+	def onSpinner(self,sender):
+		self.update_tuning_label()
+		
+	def onSpinnerLimit(self,sender):
+		string = int(sender.name[-1])
+		pointer = sender.pointer
+		if pointer == 0:  # at begining, wants to go lower
+			thisOctave = int(self.octaveTextArray[string].text)
+			if thisOctave: #its non zero, so let it go lower by itself
+				self.octaveTextArray[string].text = "{}".format(thisOctave-1)
+			else: # it zero, need to leave it, shift all others up and shift base octave down
+				if self.octave == 0:  # no can do
+					console.hud_alert("Can't lower base octave",'error',2)
+					return
+				self.octave -= 1
+				self.octaveTextField.text = "{}".format(self.octave)
+				for i,octaveText in enumerate(self.octaveTextArray):
+					if i == string: 
+						continue #
+					else:
+						thisOctave = int(octaveText.text)
+ 						octaveText.text = "{}".format(thisOctave+1)
+			self.spinnerArray[string].pointer = self.maxPointer
+		else: #we're at the top, need to increase this one
+			thisOctave = int(self.octaveTextArray[string].text)
+			if thisOctave < self.maxOctave: # its not too large (by itself)
+				self.octaveTextArray[string].text = "{}".format(thisOctave+1)
+			else: # its amxed out, neet to leave it, shift all others downa down shift base octave up
+				if self.octave == self.maxOctave: # no can do
+					console.hud_alert("Can't raise the base octave",'error',2)
+					return
+				self.octave += 1
+				self.octaveTextField.text = "{}".format(self.octave)
+				for i,octaveText in enumerate(self.octaveTextArray):
+					if i == string: 
+						continue #
+					else:
+						thisOctave = int(octaveText.text)
+						octaveText.text = "{}".format(thisOctave-1)
+			self.spinnerArray[string].pointer = 0	
+					
+
+					
+			
+		
+	def playTuning(self,button):
+		tones =  [spinner.pointer for spinner in self.spinnerArray]
+		octaves = [int(tf.text) for tf in self.octaveTextArray]
+		baseOctave = self.octave
+		for i,tone in enumerate(tones):
+			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octaves[i]+baseOctave)
+			sound.play_effect(waveName)
+			time.sleep(fretboard.arpSpeed)
 	
 		
 def onSaveState(button):
@@ -2319,6 +2467,12 @@ def onScaleSpinner(sender):
 	fretboard.scaleFrets = calc_two_octave_scale(fretboard.location,mode=fretboard.scale_mode)
 	fretboard.set_needs_display()
 		
+		
+		
+
+		
+	
+	
 ##############################################
 ##############################################
 if __name__ == "__main__":	
@@ -2336,6 +2490,7 @@ if __name__ == "__main__":
 		
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
+	mainViewShield = Shield(mainView)
 	
 	num_chords = mainView['num_chords']
 	chord_num = mainView['chord_num']
@@ -2428,7 +2583,7 @@ if __name__ == "__main__":
 	                      limits=(2,ccc['SPAN_DEFAULT_UNKNOWN']+2),
 	                      action=onSpanSpinner)
 	mainView.add_subview(spanSpinner)
-	spanSpinner.position((580,443))
+	spanSpinner.position =(580,443)
 	
 	scaleSpinner = Spinner(spinnerSize=(120,40),
 	                       name='sp_scale',
@@ -2436,7 +2591,7 @@ if __name__ == "__main__":
 	                       initialValue=['normal','down','open','FourOnString'],
 	                       action=onScaleSpinner)
 	mainView.add_subview(scaleSpinner)
-	scaleSpinner.position((570,300))
+	scaleSpinner.position = (570,300)
 	scaleSpinner.hidden = True
 	
 	mainView['view_fretEnter'].hidden = True
@@ -2448,26 +2603,11 @@ if __name__ == "__main__":
 	
 	mainView['view_settingsView'].hidden = True
 	mainView['view_instrumentEditor'].hidden = True
+	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument
 	
 	
 	
 	fretboard.set_chordnum(chord_num,num_chords)
 	toggle_mode(mainView['button_calc'])
-	sound.set_volume(0.5)
-	
-# implement state file 
-
-	STATE_FILE = 'state.json'
-	if os.path.exists(STATE_FILE):
-		stateFile = open(STATE_FILE,'rb')
-		stateFileObj = stateFile.read()
-		stateFile.close()
-		setState(stateFileObj)
-	else:
-		stateFileObj = initStateObj()
-		stateFile = open(STATE_FILE, 'wb')
-		stateFile.write(stateFileObj)
-		stateFile.close()
-		
-	
+	sound.set_volume(0.5)	
 	mainView.present(style='full_screen',orientations=('landscape',))
