@@ -502,15 +502,14 @@ def apply_filters(filters,fingerings):
 def tuningLabel(notes):
 	'''return the notes for the current tuning'''
 	note_string = ''
+	note_accents = ["","'",'"',"`","^"]
 	for note in notes:
 		note_range,base_note = divmod(note,12)
 		note_char = re.split('/', ccc['NOTE_NAMES'][base_note])[0]
 		if not note_range:
 			note_string += note_char
-		elif note_range == 1:
-			note_string += note_char.lower()
-		elif note_range == 2:
-			note_string += note_char.lower() + "'"
+		else:
+			note_string += note_char.lower() + note_accents[note_range-1]
 		note_string += ' '
 	return note_string.strip()
 	
@@ -1426,11 +1425,13 @@ class Instrument(object):
 		
 	def tableview_did_select(self,tableView,section,row): # Instrument
 		global tuningDisplay, spanSpinner, currentState
-	
+		
 		self.toggleChecked(row)
 		try:
-			self.toggleChecked(self.tuning['row'])
-		except:
+			self.toggleChecked(self.tuning['row']) #clear old row if one is checked
+		except AttributeError:
+			pass
+		except KeyError:
 			pass
 		tableView.reload_data()	
 		thisRow = self.items[row]
@@ -1469,7 +1470,22 @@ class Instrument(object):
 		cell.text_label.text = self.items[row]['title']
 		cell.accessory_type = self.items[row]['accessory_type']
 		return cell
-				
+
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return True
+
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return True
+
+	def tableview_delete(self, tableview, section, row):
+		# Called when the user confirms deletion of the given row.
+		pass
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		# Called when the user moves a row with the reordering control (in editing mode).
+		pass
 ###################################################
 # chord type
 
@@ -2138,7 +2154,7 @@ def toggle_mode(button):
 		try:
 			mainView[view].hidden = False
 		except:
-			print view
+			console.hud_alert('in toggle_mode, view {} does not exist'.format(view))
 	
 	if mode == 'C': # special stuff for identify
 		mainView['button_edit_chord'].title = 'type'
@@ -2300,7 +2316,7 @@ class InstrumentEditor(ui.View):
 			notes = thisInstrument['notes']
 		except TypeError: # no instrument chosen
 			return
-		
+			
 		mainViewShield.conceal()
 		numStrings = len(notes)
 		self.span = thisInstrument['span']
@@ -2335,14 +2351,14 @@ class InstrumentEditor(ui.View):
 			self.add_subview(tempOctave)
 			self.spinnerArray.append(temp)
 			self.octaveTextArray.append(tempOctave)
-		newSpanSpinner = Spinner(name='EIspanSpinner',
+		self.SpanSpinner = Spinner(name='EIspanSpinner',
 		                         initialValue = self.span,
 		                         limits=(2,self.span+2),
 		                         spinnerSize = (spinnerWidth,32),
 		                         fontSize = 16
 		                         )
-		newSpanSpinner.position = (240,185)
-		self.add_subview(newSpanSpinner)
+		self.SpanSpinner.position = (240,185)
+		self.add_subview(self.SpanSpinner)
 		self.tuningButton.action = self.playTuning
 		self.update_tuning_label()
 		self.hidden  = False
@@ -2350,7 +2366,36 @@ class InstrumentEditor(ui.View):
 		
 		
 	def onOkay(self,sender):
-		pass
+		global mainView
+		if self.textField.text in [entry['title'] for entry in instrument.items]:
+			console.hud_alert("Needs new name, please edit entry",'error',2)
+			return	
+		entry = {}
+		entry['title'] = self.textField.text
+		entry['octave'] = self.octave
+		notes = []
+		octaves = [int(tf.text) for tf in self.octaveTextArray]
+		for i,note in enumerate([int(x.pointer) for x in self.spinnerArray]):
+			notes.append(note+octaves[i]*12)
+
+		entry['notes'] = notes
+		entry['span'] = int(self.SpanSpinner.value)
+		entry['accessory_type'] = 'none'
+		
+		mainView['tableview_inst_tune'].delegate.items.insert(0,entry)
+		for i in range(len(mainView['tableview_inst_tune'].delegate.items)):
+			mainView['tableview_inst_tune'].delegate.items[i]['accessory_type'] = 'none'
+		mainView['tableview_inst_tune'].delegate.tuning = {}
+		mainView['tableview_inst_tune'].reload_data()
+		self.hidden = True
+		for subview in self.spinnerArray:
+			self.remove_subview(subview)
+		for subview in self.octaveTextArray:
+			self.remove_subview(subview)
+		self.spinnerArray = []
+		self.octaveTextArray = []
+		mainViewShield.reveal()
+		
 		
 	def onCancel(self,sender):
 		self.hidden = True
@@ -2358,7 +2403,10 @@ class InstrumentEditor(ui.View):
 			self.remove_subview(subview)
 		for subview in self.octaveTextArray:
 			self.remove_subview(subview)
+		self.spinnerArray = []
+		self.octaveTextArray = []
 		mainViewShield.reveal()
+
 		
 	def update_tuning_label(self):
 		pointers = [spinner.pointer for spinner in self.spinnerArray]
@@ -2375,13 +2423,14 @@ class InstrumentEditor(ui.View):
 	def onSpinnerLimit(self,sender):
 		string = int(sender.name[-1])
 		pointer = sender.pointer
+		currentOctaves = [int(x.text) for x in self.octaveTextArray]			
+		thisOctave = currentOctaves[string]
 		if pointer == 0:  # at begining, wants to go lower
-			thisOctave = int(self.octaveTextArray[string].text)
 			if thisOctave: #its non zero, so let it go lower by itself
 				self.octaveTextArray[string].text = "{}".format(thisOctave-1)
 			else: # it zero, need to leave it, shift all others up and shift base octave down
-				if self.octave == 0:  # no can do
-					console.hud_alert("Can't lower base octave",'error',2)
+				if self.octave == 0 or self.maxOctave in currentOctaves:  # no can do
+					console.hud_alert("out of range",'error',2)
 					return
 				self.octave -= 1
 				self.octaveTextField.text = "{}".format(self.octave)
@@ -2393,26 +2442,22 @@ class InstrumentEditor(ui.View):
  						octaveText.text = "{}".format(thisOctave+1)
 			self.spinnerArray[string].pointer = self.maxPointer
 		else: #we're at the top, need to increase this one
-			thisOctave = int(self.octaveTextArray[string].text)
 			if thisOctave < self.maxOctave: # its not too large (by itself)
 				self.octaveTextArray[string].text = "{}".format(thisOctave+1)
 			else: # its amxed out, neet to leave it, shift all others downa down shift base octave up
-				if self.octave == self.maxOctave: # no can do
-					console.hud_alert("Can't raise the base octave",'error',2)
+				if self.octave == self.maxOctave or 0 in currentOctaves: # no can do
+					console.hud_alert("out of range",'error',2)
 					return
 				self.octave += 1
 				self.octaveTextField.text = "{}".format(self.octave)
 				for i,octaveText in enumerate(self.octaveTextArray):
-					if i == string: 
+					if i != string: 
 						continue #
 					else:
 						thisOctave = int(octaveText.text)
 						octaveText.text = "{}".format(thisOctave-1)
 			self.spinnerArray[string].pointer = 0	
-					
-
-					
-			
+			self.update_tuning_label()		
 		
 	def playTuning(self,button):
 		tones =  [spinner.pointer for spinner in self.spinnerArray]
