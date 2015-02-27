@@ -66,7 +66,12 @@ import Spinner; 		reload(Spinner); 			from Spinner import Spinner
 import Shield; 			reload(Shield); 			from Shield import Shield
 
 
-
+def listShuffle(list,row_from, row_to):
+	''' a method to re-order a list '''
+	from_item = list[row_from]
+	del list[row_from]
+	list.insert(row_to,from_item)
+	return list
 
 def rotate(list,index):
 	''' take the input list and rotate it by indicated number of positions
@@ -1366,18 +1371,26 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 # instrument/tuning object
 	
 class Instrument(object):	
-	global currentState
+	global currentState, mainView
 	def __init__(self, items, fb):
 		self.items = items
 		self.fb = fb
 		self.instrument = currentState['instrument']
 		self.is5StringBanjo = False
-	
+		self.editing = False
+		self.delegator = mainView['tableview_inst_tune']
+		self.currentNumLines = len(self.items)
 	
 	def onEdit(self,button):
-		pass
-	
-	
+		if self.delegator.editing: 
+			self.delegator.editing = False
+			self.delegator.reload_data()
+		else:
+			self.delegator.editing = True
+			self.tuning = {}
+			for item in self.items:
+				item['accessory_type'] = 'none'
+				
 	def __getitem__(self,key):
 		try:
 			return self.tuning[key]
@@ -1461,7 +1474,7 @@ class Instrument(object):
 
 	def tableview_number_of_rows(self, tableview, section):
 		# Return the number of rows in the section
-		return len(self.items)
+		return self.currentNumLines
 
 	def tableview_cell_for_row(self, tableview, section, row):
 		# Create and return a cell for the given section/row
@@ -1481,26 +1494,37 @@ class Instrument(object):
 
 	def tableview_delete(self, tableview, section, row):
 		# Called when the user confirms deletion of the given row.
-		pass
+		self.currentNumLines -=1 # see above regarding hte "syncing"
+		self.delegator.delete_rows((row,)) # this animates the deletion  could also 'tableview.reload_data()'
+		del self.items[row]
 
 	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
 		# Called when the user moves a row with the reordering control (in editing mode).
-		pass
+		self.items = listShuffle(self.items,from_row,to_row)
 ###################################################
 # chord type
 
 
 
 class Chord(object):
-	global curentState
+	global curentState,mainView
 	def __init__(self,items,fb):
 		self.items = items
 		self.chord = currentState['chord']
 		self.fb = fb
+		self.delegator = mainView['tableview_type']
+		
 		
 		
 	def onEdit(self,button):
-		pass
+		if self.delegator.editing: 
+			self.delegator.editing = False
+			self.delegator.reload_data()
+		else:
+			self.delegator.editing = True
+			self.chord = {}
+			for item in self.items:
+				item['accessory_type'] = 'none'
 		
 	def __getitem__(self,key):
 		try:
@@ -1563,7 +1587,25 @@ class Chord(object):
 		cell.text_label.text = self.items[row]['title']
 		cell.accessory_type = self.items[row]['accessory_type']
 		return cell
-		
+
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return False
+
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return True
+
+	def tableview_delete(self, tableview, section, row):
+		# Called when the user confirms deletion of the given row.
+		self.currentNumLines -=1 # see above regarding hte "syncing"
+		self.delegator.delete_rows((row,)) # this animates the deletion  could also 'tableview.reload_data()'
+		del self.items[row]
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		# Called when the user moves a row with the reordering control (in editing mode).
+		self.items = listShuffle(self.items,from_row,to_row)
+
 	def get_chord(self):
 		return self.chord
 		
@@ -1739,9 +1781,19 @@ class Filters(ui.View):
 		self.fb = fb
 		self.filter_list = []
 		self.items = ccc['FILTER_LIST_CLEAN']
+		self.delegator = mainView['tableview_filters']
+		
+		
 		
 	def onEdit(self,button):
-		pass
+		if self.delegator.editing: 
+			self.delegator.editing = False
+			self.delegator.reload_data()
+		else:
+			self.delegator.editing = True
+			self.chord = {}
+			for item in self.items:
+				item['accessory_type'] = 'none'
 	
 	def set_filters(self):
 		self.filter_list = []
@@ -1826,6 +1878,24 @@ class Filters(ui.View):
 		cell.accessory_type = self.items[row]['accessory_type']
 		return cell
 		
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return False
+
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return True
+
+	def tableview_delete(self, tableview, section, row):
+		# Called when the user confirms deletion of the given row.
+		self.currentNumLines -=1 # see above regarding hte "syncing"
+		self.delegator.delete_rows((row,)) # this animates the deletion  could also 'tableview.reload_data()'
+		del self.items[row]
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		# Called when the user moves a row with the reordering control (in editing mode).
+		self.items = listShuffle(self.items,from_row,to_row)
+		
 	def get_chord(self):
 		return self.chord
 		
@@ -1837,9 +1907,17 @@ class Capos(object):
 		self.capos = {}
 		currentState['capos'] = self		
 		self.fb = currentState['fretboard']
-	
+		self.delegator = mainView['tableview_capos']
+		
 	def onEdit(self,button):
-		pass
+		if self.delegator.editing: 
+			self.delegator.editing = False
+			self.delegator.reload_data()
+		else:
+			self.delegator.editing = True
+			self.chord = {}
+			for item in self.items:
+				item['accessory_type'] = 'none'
 		
 	def __getitem__(self,key):
 		try:
@@ -1925,10 +2003,7 @@ class Capos(object):
 					minFret = fretEnter.min = fretboard.fret5thStringBanjo + 1
 			fretEnter.label.text = "Enter fret # {}-{}".format(minFret,maxFret)
 			fretEnter.hidden = False
-			
-		
-
-		
+				
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
 		return 1
@@ -1946,8 +2021,23 @@ class Capos(object):
 		cell.accessory_type = self.items[row]['accessory_type']
 		return cell
 		
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return False
 
-					
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return True
+
+	def tableview_delete(self, tableview, section, row):
+		# Called when the user confirms deletion of the given row.
+		self.currentNumLines -=1 # see above regarding hte "syncing"
+		self.delegator.delete_rows((row,)) # this animates the deletion  could also 'tableview.reload_data()'
+		del self.items[row]
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		# Called when the user moves a row with the reordering control (in editing mode).
+		self.items = listShuffle(self.items,from_row,to_row)				
 		
 class FretEnter(ui.View):
 	''' implement routines for fret entry'''
