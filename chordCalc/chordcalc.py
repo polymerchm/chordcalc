@@ -65,6 +65,8 @@ import debugStream; reload(debugStream); 	from debugStream import debugStream
 import Spinner; 		reload(Spinner); 			from Spinner import Spinner
 import Shield; 			reload(Shield); 			from Shield import Shield
 
+SettingsFileName = 'settings.ini'
+ConfigFileName = 'config.ini'
 
 def listShuffle(list,row_from, row_to):
 	''' a method to re-order a list '''
@@ -2378,8 +2380,173 @@ def applyState(state):
 	instrument.updateScaleChord()
 	
 	
+
+class SettingListDelegate(object):
+	global mainView
+	def __init__(self):
+		if not os.path.exists(SettingsFileName):
+			console.hud_alert('Creating base settings file','error')
+			self.items = [{'title':'default', 
+			             'capos':						[], 
+			             'filters':					[], 
+			             'instrument':			'GUITAR', 
+			             'accessory_type':	'none'}]
+			fh = open(SettingsFileName,'wb')
+			json.dump(self.items,fh)
+			fh.close()
+		else:
+			fh = open(SettingsFileName,'rb')
+			self.items = json.load(fh)
+			fh.close()
+			
+		self.delegator = mainView['view_settingsView']['tv_SettingsList']
+		self.delegator.reload_data()	
+			
+	def tableview_number_of_sections(self, tableview):
+		# Return the number of sections (defaults to 1)
+		return 1
+
+	def tableview_number_of_rows(self, tableview, section):
+		# Return the number of rows in the section
+		return len(self.items)
+
+	def tableview_cell_for_row(self, tableview, section, row):
+		# Create and return a cell for the given section/row
+		import ui
+		cell = ui.TableViewCell()
+		cell.text_label.text = self.items[row]['title']
+		cell.accessory_type = self.items[row]['accessory_type']
+		return cell
+
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return True
+
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return True
+
+	def tableview_delete(self, tableview, section, row):
+		# Called when the user confirms deletion of the given row.
+		self.currentNumLines -=1 # see above regarding hte "syncing"
+		self.delegator.delete_rows((row,)) # this animates the deletion  could also 'tableview.reload_data()'
+		del self.items[row]
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		# Called when the user moves a row with the reordering control (in editing mode).
+		self.items = listShuffle(self.items,from_row,to_row)
+			
+	def tableview_did_select(self, tableview, section, row):
+		# Called when a row was selected.
+		global instrument,filters,capos,currentState
+		selection = self.items[row]
+		for i,entry in enumerate(instrument.items):
+			entry['accessory_type'] = 'checkmark' if entry['title'] == selection['instrument'] else 'none'
+			if entry['accessory_type'] == 'checkmark':
+				thisInstrument = i
+			instrument.items[i] = entry
+		instrument.delegator.reload_data()
+		for i,entry in enumerate(filters.items):
+			entry['accessory_type'] = 'none'
+			entry['fret'] = 0
+			for filter in selection['filters']:
+				if entry['title'] == filter:
+					entry['accessory_type'] = 'checkmark'
+			filters.items[i] = entry
+		for i,entry in enumerate(capos.items):
+			entry['accessory_type'] = 'none'
+			entry['fret'] = 0
+			for capo in selection['filters']:
+				if entry['title'] == filter[0]:
+					entry['accessory_type'] = 'checkmark'
+					entry['row'] = filter[1]
+			capos.items[i] = entry
+		capos.delegator.reload_data()
+		
+		
+		thisRow = instrument.items[thisInstrument]
+		instrument.tuning = { 
+		               'title':		thisRow['title'],
+		                'notes':	thisRow['notes'],
+		                'span':		thisRow['span'],
+		                'octave':	thisRow['octave'],
+		                'row':		row
+		               }
+		currentState['instrument'] = instrument.tuning
+
+		instrument.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+
+		currentState['span'].value = thisRow['span']
+		currentState['span'].limits  = (1,thisRow['span']+2)
+		filters.set_filters() 
+		filters.delegator.reload_data()
+		instrument.updateScaleChord()
+		fretboard.set_needs_display()
+			
+			
+			
+
+			
+
 class SettingsView(ui.View):
-	pass
+	def did_load(self):
+		self.tvSetting = self['tv_SettingsList']
+		self.tvSettingShield = Shield(self.tvSetting)
+		self.tvSetting.editing = False
+		for subview in self.subviews:
+			if subview.name.endswith('OK'):
+				subview.action = self.onOK
+				self.btnOK = subview
+			elif subview.name.endswith('Cancel'):
+				subview.action = self.onCancel
+			elif subview.name.endswith('Default'):
+				subview.action = self.onDefault
+				self.btnDefault = subview
+			elif subview.name.endswith('Edit'):
+				subview.action = self.toggleListEdit
+			elif subview.name.endswith('Name'):
+				self.textField = subview
+				
+	def onSettingsSave(self,button):
+		mainViewShield.conceal()
+		self.hidden = False
+		self.textField.enabled = True
+		self.btnOK.enabled = True
+		self.btnDefault.enabled = True
+		self.tvSettingShield.conceal()
+		self.bring_to_front()
+		
+		
+	def onSettingsLoad(self,button):
+		mainViewShield.conceal()
+		self.hidden = False
+		self.textField.enabled = False
+		self.btnOK.enabled = False
+		self.btnDefault.enabled = False
+		self.tvSettingShield.reveal()
+		self.bring_to_front()
+		#rest will be done by did_select of delegate
+		
+	def onOK(self,button):
+		mainViewShield.reveal()
+		self.hidden = True
+		pass
+		
+	def onDefault(self,button):
+		mainViewShield.reveal()
+		self.hidden = True
+		pass
+		
+	def onCancel(self,button):
+		mainViewShield.reveal()
+		self.hidden = True
+		pass
+		
+	def toggleListEdit(self,button):
+		pass
+			
+		
+		
 		
 	
 	
@@ -2559,18 +2726,18 @@ class InstrumentEditor(ui.View):
 			time.sleep(fretboard.arpSpeed)
 	
 		
-def onSaveState(button):
+def onSaveSettings(button):
 	pass
 	
-def onLoadState(button):
+def onLoadSettings(button):
 	pass
 	
 def createConfig():
 	global ccc
-	if os.path.exists('config'):
+	if os.path.exists(ConfigFileName):
 		try:
 			resp = console.alert('config exists','Restore the "factory settings"?','OK')
-			os.remove('config')
+			os.remove(ConfigFileName)
 		except KeyboardInterrupt as e:
 			return
 # read in the non-local data and write it out as a json object
@@ -2584,6 +2751,8 @@ def createConfig():
 	fh.close()
 		
 
+def onSaveConfig():
+	pass
 
 		
 	
@@ -2618,7 +2787,7 @@ if __name__ == "__main__":
 		console.alert('waves sound files not present, run makeWave.py')
 		sys.exit(1)
 		
-	if not os.path.exists('config'):
+	if not os.path.exists(ConfigFileName):
 		createConfig() 
 	else:
 		restoreConfig()
@@ -2676,9 +2845,7 @@ if __name__ == "__main__":
 	scale_list = ccc['SCALE_LIST_CLEAN']
 	scale = Scale(scale_list,fretboard)
 	tvScale.data_source = tvScale.delegate = scale
-	
-	
-	
+		
 	mainView['button_arp'].action = play
 	mainView['button_chord'].action = play
 	mainView['button_ident'].action = toggle_mode
@@ -2733,16 +2900,25 @@ if __name__ == "__main__":
 	mainView['sp_span'].hidden = True
 	currentState['span'] = mainView['sp_span']
 	
-	mainView['button_save'].action = onSaveState
-	mainView['button_load'].action = onLoadState
+	mainView['button_save'].action = onSaveSettings
+	mainView['button_load'].action = onLoadSettings
+	mainView['button_save_config'].action = onSaveConfig
 	
 	mainView['view_settingsView'].hidden = True
-	mainView['view_instrumentEditor'].hidden = True
-	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument
+	settings = SettingListDelegate()
+	mainView['view_settingsView']['tv_SettingsList'].data_source = settings
+	mainView['view_settingsView']['tv_SettingsList'].delegate = settings
+	mainView['button_save'].action = mainView['view_settingsView'].onSettingsSave
+	mainView['button_load'].action = mainView['view_settingsView'].onSettingsLoad
 	
+	
+	mainView['view_instrumentEditor'].hidden = True
+	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
 	
 	
 	fretboard.set_chordnum(chord_num,num_chords)
 	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)	
+	
+	
 	mainView.present(style='full_screen',orientations=('landscape',))
