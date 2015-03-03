@@ -834,6 +834,9 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.arpSpeed = (self.arpMax + self.arpMin)/2.0
 		self.sharpFlatState = '#'
 		self.fret5thStringBanjo = 5
+		self.wasTouched = False
+		self.inLongTouch = False
+		self.longTouchDelay = 0.5
 		
 	def sharpFlat(self,sender): #toggle
 		self.sharpFlatState = 'b' if self.sharpFlatState == '#' else '#'
@@ -1300,8 +1303,32 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		deltas = self.distance(x,a)
 		index,value = min(enumerate(deltas),key=lambda val:val[1])
 		return index
-
+		
+	def doLongTouch(self):
+		# got here so should be a long touch
+		self.wasLongTouch = True
+		
+	
 	def touch_began(self,touch):
+		''' begining of a touch'''	
+		self.wasTouched = True
+		self.wasLongTouch = False
+		self.touch_start = touch.location
+		self.touchStartTime = time.time()
+		# fire of a delayed function to confirm long touch if it is
+		ui.delay(self.doLongTouch, self.longTouchDelay)	
+
+	def touch_ended(self,touch):
+		ui.cancel_delays() # will prevent long delay if it isn't'
+		self.touch_end = touch.location
+		DeltaX = self.touch_end[0] - self.touch_start[0]
+		DeltaY = self.touch_end[1] - self.touch_start[1]
+		touchEndTime = time.time()
+		DeltaT = touchEndTime - self.touchStartTime
+		distance = math.sqrt(DeltaX*DeltaX + DeltaY*DeltaY)
+		rate = distance/DeltaT
+		angle = math.atan2(DeltaY,DeltaX)*180/math.pi
+		
 		if self.cc_mode == 'I':
 			offsets = capos.capoOffsets()
 			x,y = touch.location
@@ -1333,14 +1360,35 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				return None
 			self.scaleFrets = calc_two_octave_scale(self.location,mode=self.scale_mode)
 			self.set_needs_display()
-		elif self.cc_mode == 'C': # switch display to chord tones
-			self.showChordScale = not self.showChordScale
-			if self.showChordScale:
-				#toggle on the scaleortone buttons
-				self.ChordScaleFrets = calc_chord_scale()
+		elif self.cc_mode == 'C':
+			if abs(DeltaY) > 30: # sweep
+				_,_,_,yrange = self.frame
+				fraction = DeltaY/yrange
+				try:
+					increment = int(fraction*len(self.ChordPositions))/2
+				except TypeError:
+					return
+				self.currentPosition += increment
+				self.currentPosition = max(0,self.currentPosition)
+				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)
+			elif self.wasLongTouch: #jump to this fret
+				x,y = touch.location
+				fret = self.closest(y,self.fretY)
+				for i,fingering in enumerate(self.ChordPositions):
+					_,_,frets = fingering
+					testVector =  sorted([x for x in frets if x > 0])
+					if fret - 2 <= testVector[0] <= fret + 2:					
+						break
+				self.currentPosition = i if i < len(self.ChordPositions) - 1 else self.currentPosition
 			else:
-				#toggle off the scaleotone buttons
-				self.ChordScaleFrets = []
+				# switch display to chord tones
+				self.showChordScale = not self.showChordScale
+				if self.showChordScale:
+					#toggle on the scaleortone buttons
+					self.ChordScaleFrets = calc_chord_scale()
+				else:
+					#toggle off the scaleotone buttons
+					self.ChordScaleFrets = []
 			self.set_needs_display()
 			
 		
