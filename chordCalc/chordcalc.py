@@ -1081,7 +1081,6 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.drawFingerboard()
 		
 		capos = currentState['capos']
-			
 		for key in capos.capos.keys():
 			self.drawCapo(key)
 		
@@ -1441,13 +1440,11 @@ class Instrument(object):
 	def tableview_did_select(self,tableView,section,row): # Instrument
 		global tuningDisplay, spanSpinner, currentState
 		
-		self.toggleChecked(row)
-		try:
-			self.toggleChecked(self.tuning['row']) #clear old row if one is checked
-		except AttributeError:
-			pass
-		except KeyError:
-			pass
+		
+		for i in range(len(self.items)):
+			self.items[i]['accessory_type'] = 'none'
+		self.items[row]['accessory_type'] = 'checkmark'
+
 		tableView.reload_data()	
 		thisRow = self.items[row]
 		self.tuning = { 
@@ -2068,7 +2065,7 @@ class FretEnter(ui.View):
 		
 		if button.name.endswith('Cancel'):
 			mainView['view_fretEnter'].hidden = True
-		else:
+		else: # OK
 			entry = self.textfield.text
 			if not entry.isnumeric():
 				console.hud_alert('invalid entry','error')
@@ -2398,9 +2395,9 @@ class SettingListDelegate(object):
 			fh = open(SettingsFileName,'rb')
 			self.items = json.load(fh)
 			fh.close()
-			
+		
+		self.currentNumLines = len(self.items)	
 		self.delegator = mainView['view_settingsView']['tv_SettingsList']
-		self.delegator.reload_data()	
 			
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -2415,7 +2412,6 @@ class SettingListDelegate(object):
 		import ui
 		cell = ui.TableViewCell()
 		cell.text_label.text = self.items[row]['title']
-		cell.accessory_type = self.items[row]['accessory_type']
 		return cell
 
 	def tableview_can_delete(self, tableview, section, row):
@@ -2440,30 +2436,13 @@ class SettingListDelegate(object):
 		# Called when a row was selected.
 		global instrument,filters,capos,currentState
 		selection = self.items[row]
-		for i,entry in enumerate(instrument.items):
-			entry['accessory_type'] = 'checkmark' if entry['title'] == selection['instrument'] else 'none'
-			if entry['accessory_type'] == 'checkmark':
+		for i in range(len(instrument.items)):
+			instrument.items[i]['accessory_type'] = 'none'
+			if instrument.items[i]['title'] == selection['instrument']:
+				instrument.items[i]['accessory_type'] = 'checkmark'
 				thisInstrument = i
-			instrument.items[i] = entry
 		instrument.delegator.reload_data()
-		for i,entry in enumerate(filters.items):
-			entry['accessory_type'] = 'none'
-			entry['fret'] = 0
-			for filter in selection['filters']:
-				if entry['title'] == filter:
-					entry['accessory_type'] = 'checkmark'
-			filters.items[i] = entry
-		for i,entry in enumerate(capos.items):
-			entry['accessory_type'] = 'none'
-			entry['fret'] = 0
-			for capo in selection['filters']:
-				if entry['title'] == filter[0]:
-					entry['accessory_type'] = 'checkmark'
-					entry['row'] = filter[1]
-			capos.items[i] = entry
-		capos.delegator.reload_data()
-		
-		
+				
 		thisRow = instrument.items[thisInstrument]
 		instrument.tuning = { 
 		               'title':		thisRow['title'],
@@ -2473,26 +2452,37 @@ class SettingListDelegate(object):
 		                'row':		row
 		               }
 		currentState['instrument'] = instrument.tuning
-
 		instrument.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
-
 		currentState['span'].value = thisRow['span']
 		currentState['span'].limits  = (1,thisRow['span']+2)
+		
 		filters.set_filters() 
+		filters.filter_list = []
+		for i in range(len(filters.items)):
+			for filter in selection['filters']:
+				if filter == filters.items[i]['title']:
+					filters.items[i]['accessory_type'] = 'checkmark'
+					filters.filter_list.append(filter)
 		filters.delegator.reload_data()
+					
+		capos.capos = {}			
+		for i in range(len(capos.items)):
+			capos.items[i]['accessory_type'] = 'none'
+			capos.items[i]['fret'] = 0
+			for capo in selection['capos']:
+				if capo[0]  == capos.items[i]['title']:
+					capos.items[i]['accessory_type'] = 'checkmark'
+					capos.items[i]['fret'] = int(capo[1])
+					capos.capos[int(capo[1])] = capos.items[i]['mask'] 
+		capos.delegator.reload_data()
 		instrument.updateScaleChord()
 		fretboard.set_needs_display()
-			
-			
-			
-
-			
+		mainView['view_settingsView'].hidden = True
+		mainViewShield.reveal()	
 
 class SettingsView(ui.View):
+	global settings,mainView
 	def did_load(self):
-		self.tvSetting = self['tv_SettingsList']
-		self.tvSettingShield = Shield(self.tvSetting)
-		self.tvSetting.editing = False
 		for subview in self.subviews:
 			if subview.name.endswith('OK'):
 				subview.action = self.onOK
@@ -2506,6 +2496,11 @@ class SettingsView(ui.View):
 				subview.action = self.toggleListEdit
 			elif subview.name.endswith('Name'):
 				self.textField = subview
+			elif subview.name.endswith('List'):
+				self.tvSettingsList = subview
+				self.tvSettingsList.editing = False
+				self.tvSettingsListShield = Shield(self.tvSettingsList)
+				
 				
 	def onSettingsSave(self,button):
 		mainViewShield.conceal()
@@ -2513,42 +2508,87 @@ class SettingsView(ui.View):
 		self.textField.enabled = True
 		self.btnOK.enabled = True
 		self.btnDefault.enabled = True
-		self.tvSettingShield.conceal()
+		self.tvSettingsListShield.conceal()
 		self.bring_to_front()
 		
-		
 	def onSettingsLoad(self,button):
+		global settings
 		mainViewShield.conceal()
 		self.hidden = False
 		self.textField.enabled = False
 		self.btnOK.enabled = False
 		self.btnDefault.enabled = False
-		self.tvSettingShield.reveal()
+		self.tvSettingsListShield.reveal()
+		self.tvSettingsList.reload_data()
 		self.bring_to_front()
 		#rest will be done by did_select of delegate
 		
 	def onOK(self,button):
+		global settings
+		console.hud_alert('doing the on button')
+		if self.textField.text in [x['title'] for x in settings.items]:
+			console.hud_alert('Title already in use','error')
+			return
+		settingName = self.textField.text
+		self.textField.text = ''
+		theseCapos = [(item['title'],item['fret']) for item in capos.items if item['fret']]
+		theseFilters = [item['title'] for item in filters.items if item['accessory_type'] == 'checkmark']
+		thisInstrument = [item['title'] for item in instrument.items
+		                   if item['accessory_type'] == 'checkmark'][0]
+		                   
+		item = {'title':settingName, 'capos':theseCapos,
+		         'filters':theseFilters, 'instrument':thisInstrument,'accessory_type':'none'}
+		settings.items.append(item)
+
+		fh = open(SettingsFileName,'wb')
+		json.dump(settings.items,fh)
+		fh.close()
+		settings.delegator.reload_data()
 		mainViewShield.reveal()
 		self.hidden = True
-		pass
+	
 		
 	def onDefault(self,button):
+		theseCapos = [(item['title'],item['fret']) for item in capos.items if item['fret']]
+		theseFilters = [item['title'] for item in filters.items if item['accessory_type'] == 'checkmark']
+		thisInstrument = [item['title'] for item in instrument.items
+		                   if item['accessory_type'] == 'checkmark'][0]
+		                   
+		item = {'title':'default', 'capos':theseCapos,
+		         'filters':theseFilters, 'instrument':thisInstrument}
+		for i,entry in enumerate(settings.items):
+			if entry['title'] == 'default':
+				settings.items[i] = item
+		self.tvSettingsList.reload_data()
+		fh = open(SettingsFileName,'wb')
+		json.dump(settings.items,fh)
+		fh.close()
 		mainViewShield.reveal()
 		self.hidden = True
 		pass
 		
 	def onCancel(self,button):
 		mainViewShield.reveal()
+		self.tvSettingsList.editing = False
 		self.hidden = True
-		pass
+		
 		
 	def toggleListEdit(self,button):
-		pass
-			
-		
-		
-		
-	
+		global settings
+		if self.tvSettingsList.editing: #finishing editing
+			self.tvSettingsList.editing = False	
+			self.tvSettingsList.reload_data()		
+			fh = open(SettingsFileName,'wb')
+			json.dump(settings.items,fh)
+			fh.close()
+			self.textField.enabled = True
+			self.btnOK.enabled = True
+			self.btnDefault.enabled = True
+		else: #start editing
+			self.textField.enabled = False
+			self.btnOK.enabled = False
+			self.btnDefault.enabled = False	
+			self.tvSettingsList.editing = True
 	
 class InstrumentEditor(ui.View):
 	def did_load(self):
@@ -2725,13 +2765,6 @@ class InstrumentEditor(ui.View):
 			sound.play_effect(waveName)
 			time.sleep(fretboard.arpSpeed)
 	
-		
-def onSaveSettings(button):
-	pass
-	
-def onLoadSettings(button):
-	pass
-	
 def createConfig():
 	global ccc
 	if os.path.exists(ConfigFileName):
@@ -2899,9 +2932,6 @@ if __name__ == "__main__":
 	mainView['view_fretEnter'].hidden = True
 	mainView['sp_span'].hidden = True
 	currentState['span'] = mainView['sp_span']
-	
-	mainView['button_save'].action = onSaveSettings
-	mainView['button_load'].action = onLoadSettings
 	mainView['button_save_config'].action = onSaveConfig
 	
 	mainView['view_settingsView'].hidden = True
