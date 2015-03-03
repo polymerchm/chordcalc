@@ -2621,6 +2621,7 @@ class InstrumentEditor(ui.View):
 		try:
 			notes = thisInstrument['notes']
 		except TypeError: # no instrument chosen
+			console.hud_alert('Please select an instrument as the base for new one','error',2)
 			return
 			
 		mainViewShield.conceal()
