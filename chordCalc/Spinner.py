@@ -148,7 +148,6 @@ class Spinner(ui.View):
 				self.label.text = str(self._value)
 				if self.action: self.action(self)
 			else:
-				print "hit list limt"
 				if self.limitAction: self.limitAction(self)
 		else: # a scalar
 			if self._limits[0] <= self._value + increment <= self._limits[1]:

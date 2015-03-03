@@ -194,6 +194,7 @@ CHORDTYPE = [
 	]
 
 
+
 CHORD_LIST_CLEAN = [{'title':chord, 'fingering':fingering, 'accessory_type':'none'} for chord,fingering in CHORDTYPE]
 
 SCALETYPE =[ #  T = Whole, S = Semitone, # = number of semitones 

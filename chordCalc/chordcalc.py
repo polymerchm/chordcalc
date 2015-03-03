@@ -210,7 +210,11 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 			tone += interval
 			tonesInTwoOctaveScale.append(tone)
 	referenceFret = thisStringFret # used to anchor the scale
-	thisIndex = fretsOnStrings[thisString].index(thisStringFret)
+	try:
+		thisIndex = fretsOnStrings[thisString].index(thisStringFret)
+	except ValueError:
+		console.hud_alert('error, line 214ish, see console')
+		print fretsOnStrings[thisString], thisStringFret
 	scaleNotes = [startingStringFret]
 	thisStringCount = 1 if thisStringFret else 0
 	nextStringNote = scale_notes[thisString+1][1]
@@ -281,8 +285,12 @@ def calc_two_octave_scale(startingStringFret,mode='normal'):
 				if mode == 'down':
 					referenceFret = fretsOnStrings[thisString][thisIndex]				
 	return scaleNotes	
-
-
+		
+def onScaleSpinner(sender):
+	fretboard.scale_mode = sender.value
+	fretboard.scaleFrets = calc_two_octave_scale(fretboard.location,mode=fretboard.scale_mode)
+	fretboard.set_needs_display()
+	
 def calc_chord_scale():
 	global currentState
 	try:
@@ -2405,7 +2413,7 @@ class SettingListDelegate(object):
 
 	def tableview_number_of_rows(self, tableview, section):
 		# Return the number of rows in the section
-		return len(self.items)
+		return self.currentNumLines
 
 	def tableview_cell_for_row(self, tableview, section, row):
 		# Create and return a cell for the given section/row
@@ -2539,6 +2547,7 @@ class SettingsView(ui.View):
 		item = {'title':settingName, 'capos':theseCapos,
 		         'filters':theseFilters, 'instrument':thisInstrument,'accessory_type':'none'}
 		settings.items.append(item)
+		settings.currentNumLines += 1
 
 		fh = open(SettingsFileName,'wb')
 		json.dump(settings.items,fh)
@@ -2779,30 +2788,61 @@ def createConfig():
 		if constant[0] != '_' and constant[0].isupper(): # a real constant
 			ccc[constant] = cccInit.__dict__[constant]
 			
-	fh = open('config','wb')
+	fh = open(ConfigFileName,'wb')
 	json.dump(ccc,fh)
 	fh.close()
 		
 
-def onSaveConfig():
-	pass
+def onSaveConfig(button):
+	global ccc
+		
+	specialKeys = '''
+	CAPOS
+	FILTER_LIST_CLEAN
+	TUNINGS
+	TUNING_LIST_CLEAN
+	CHORD_LIST_CLEAN
+	
+'''.split()
+
+	cccOut = {}
+	for key in ccc.keys():
+		if key not in specialKeys:
+			cccOut[key] = ccc[key]
+	
+	cccOut['CAPOS'] = [{'title':capo['title'],'fret':0,'mask':capo['mask'],
+		            			'accessory_type':'none'} for capo in capos.items]
+
+	cccOut['TUNING_LIST_CLEAN'] = [{'title':tuning['title'],'notes':	tuning['notes'],
+		            	               'span':tuning['span'],'octave':tuning['octave'],'accessory_type':'none'} 
+		            	               for tuning in instrument.items]
+	
+	cccOut['TUNINGS'] = [(tuning['title'], [tuning['notes'],tuning['span']],tuning['octave'])
+	                      for tuning in instrument.items]
+
+	cccOut['FILTER_LIST_CLEAN'] = [{'title': filter['title'],'desc': 	filter['desc'],
+	                                'accessory_type': 'none'} 
+		                               for filter in filters.items]
+	
+	cccOut['CHORD_LIST_CLEAN'] = [{'title':c['title'], 'fingering':c['fingering'],             'accessory_type':'none'} for c in chord.items]
+
+	fh = open(ConfigFileName, 'wb')
+	json.dump(cccOut,fh)
+	fh.close()
+		
+
 
 		
 	
 def restoreConfig():
 	global ccc
-	if not os.path.exists('config'):
+	if not os.path.exists(ConfigFileName):
 		console.hud_alert('config file missing, restoring','error',2)
 		createConfig()
-	fh = open('config','rb')
+	fh = open(ConfigFileName,'rb')
 	ccc = json.load(fh)
 		
-		
-		
-def onScaleSpinner(sender):
-	fretboard.scale_mode = sender.value
-	fretboard.scaleFrets = calc_two_octave_scale(fretboard.location,mode=fretboard.scale_mode)
-	fretboard.set_needs_display()
+
 		
 		
 		
@@ -2941,14 +2981,11 @@ if __name__ == "__main__":
 	mainView['button_save'].action = mainView['view_settingsView'].onSettingsSave
 	mainView['button_load'].action = mainView['view_settingsView'].onSettingsLoad
 	
-	
 	mainView['view_instrumentEditor'].hidden = True
 	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
-	
-	
+		
 	fretboard.set_chordnum(chord_num,num_chords)
 	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)	
-	
 	
 	mainView.present(style='full_screen',orientations=('landscape',))
