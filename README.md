@@ -17,9 +17,9 @@ generates a set of 96 2 second wave files  used by chordcalc.py to play the soun
 
 - **debugStream.py**
 
-- ** Spinner.py**
+- **Spinner.py**
 
-- ** Shield.py**
+- **Shield.py**
 
 The new features in 4.0 are:
 	
@@ -103,7 +103,7 @@ first parameter is the format string that would be used with the `.format` metho
 
 - **Spinner.py**
 
-is a custom view class that creates a spinner view, consisting of a value field and and up/down button pair.  The spinner values can be scalar (int/float) or lists.  In the former case, you can specity an increment that represents the effect of the buttons and limits that prevent the buttons from going past the limits.  YOu can associate two actions, one for a successful button push (before reaching a limit) and one that fires when you push a button at a limit.  The you can change the value, position in the list
+is a custom view class that creates a spinner view, consisting of a value field and and up/down button pair.  The spinner values can be scalar (int/float) or lists.  In the former case, you can specify an increment that represents the effect of the buttons and limits that prevent the buttons from going past the limits.  You can associate two actions, one for a successful button push (before reaching a limit) and one that fires when you push a button at a limit.  You can set/get value or position in a  list.
 
 Usage:
 	
@@ -128,7 +128,7 @@ Usage:
 
 - **Shield.py**
 
-is a custom view that creates a translucent "shield" to prevent views behind it from being responsive to touches.  Simplifies have only the topmost view respond to touches.  
+is a custom view that creates a translucent "shield" to prevent views behind it from being responsive to touches.  Simplifying having only the topmost view respond to touches.  
 
 ```
 v = ui.View(frame=(0,0,500,500))
