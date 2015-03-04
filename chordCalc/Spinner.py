@@ -46,14 +46,14 @@ class Spinner(ui.View):
 			self._value = self.initialValue = initialValue[0]
 		elif not limits[0] <= self.initialValue <= limits[1]:
 			raise ValueError("initalValue {} outside of limits {}".format(self._value,limits))
-		self.increment = increment
+		self._increment = increment
 		self._limits = limits
 		self._position = (0,0)
 
 		if self.dataType in (list,tuple):
 			self.list = [x for x in initialValue]
 			self._limits = len(self.list)
-			self.increment = 1
+			self._increment = 1
 			self._pointer = 0
 		self.action = action
 		self.limitAction = limitAction
@@ -95,10 +95,10 @@ class Spinner(ui.View):
 
 	def updateLabel(self):
 		if self.dataType in [list,tuple]:
-			if 0 <= self._pointer + self.increment <= self._limits -1 :
+			if 0 <= self._pointer + self._increment <= self._limits - 1 :
 				self.label.text = str(self._value)
 		else: # a scalar
-			if self._limits[0] <= self._value + self.increment <= self._limits[1]:
+			if self._limits[0] <= self._value + self._increment <= self._limits[1]:
 				self.label.text = str(self._value)
 				
 	@property
@@ -137,6 +137,14 @@ class Spinner(ui.View):
 		self._pointer = input
 		self._value = self.list[input]
 		self.updateLabel()
+		
+	@property
+	def increment(self):
+		return self._increment
+		
+	@increment.setter
+	def increment(self,input):
+		self._increment = input
 
 	def onArrow(self,sender):
 		# you might want to consider tap-and-hold functionality

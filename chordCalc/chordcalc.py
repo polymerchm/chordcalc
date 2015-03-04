@@ -55,13 +55,11 @@ button_config				- save current configuration
 button_new					- brings up the instrument builder
 """
 
-import sys, os.path, re, ui, console, sound, time, math, json, dialogs
+import sys, os.path, re, ui, console, sound, time, math, json
 from operator import add,mul
-from PIL import Image
 from copy import deepcopy
 import chordcalc_constants; reload(chordcalc_constants)
 import chordcalc_constants as cccInit
-import debugStream; reload(debugStream); 	from debugStream import debugStream
 import Spinner; 		reload(Spinner); 			from Spinner import Spinner
 import Shield; 			reload(Shield); 			from Shield import Shield
 
@@ -824,7 +822,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.PrevFretY = 0
 		self.touched = {} # a dictionary of touched fret/string tuples as keys, note value
 		self.location = (0,0)
-		self.cc_mode = 'C' # versus 'identify6'
+		self.cc_mode = 'C' # versus 'identify'
 		self.scale_display_mode = 'degree'
 		self.scale_mode = 'normal'
 		self.showChordScale = False
@@ -1361,7 +1359,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 			self.scaleFrets = calc_two_octave_scale(self.location,mode=self.scale_mode)
 			self.set_needs_display()
 		elif self.cc_mode == 'C':
-			if abs(DeltaY) > 30: # sweep
+			if abs(DeltaY) > 30 and abs(DeltaY) > abs(DeltaX): #  vertical sweep
 				_,_,_,yrange = self.frame
 				fraction = DeltaY/yrange
 				try:
@@ -1371,6 +1369,18 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				self.currentPosition += increment
 				self.currentPosition = max(0,self.currentPosition)
 				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)
+			elif abs(DeltaX) > 30 and abs(DeltaX) > abs(DeltaY): # horizontal sweep, small moves
+				_,_,xrange,_ = self.frame
+				fraction = DeltaX/xrange
+				try:
+					increment = int(fraction*10)
+				except TypeError:
+					return
+				self.currentPosition += increment
+				self.currentPosition = max(0,self.currentPosition)
+				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)
+				
+					
 			elif self.wasLongTouch: #jump to this fret
 				x,y = touch.location
 				fret = self.closest(y,self.fretY)
@@ -2189,10 +2199,16 @@ def play(button):
 	global currentState
 	fretboard = currentState['fretboard']
 	if os.path.exists('waves'):
-		baseOctave = currentState['instrument']['octave']
+		try:
+			baseOctave = currentState['instrument']['octave']
+		except TypeError: # no instrument selected
+			return
 		strings = currentState['instrument']['notes']
 		if fretboard.cc_mode == 'C':
-			cc = fretboard.ChordPositions[fretboard.currentPosition]
+			try:
+				cc = fretboard.ChordPositions[fretboard.currentPosition]
+			except TypeError: # no chords yet
+				return
 			frets = cc[2]
 			dead_notes = [item[3] == 'X' for item in cc[0]]
 			tones = []
@@ -2842,47 +2858,90 @@ def createConfig():
 	fh.close()
 		
 
-def onSaveConfig(button):
-	global ccc
+class ConfigView(ui.View):
+	def did_load(self):
+		for subview in self.subviews:
+			if subview.name.endswith('Cancel'):
+				subview.action = self.onCancel
+			elif subview.name.endswith('Save'):
+				subview.action = self.onSave
+			elif subview.name.endswith('Restore'):
+				subview.action = self.onRestore
+		self.hidden = True
 		
-	specialKeys = '''
-	CAPOS
-	FILTER_LIST_CLEAN
-	TUNINGS
-	TUNING_LIST_CLEAN
-	CHORD_LIST_CLEAN
-	
+	def onCancel(self,button):
+		mainViewShield.reveal()
+		self.hidden = True
+		
+	def onSave(self,button):		
+		specialKeys = '''
+			CAPOS
+			FILTER_LIST_CLEAN
+			TUNINGS
+			TUNING_LIST_CLEAN
+			CHORD_LIST_CLEAN
+			ROOT_LIST_CLEAN	
 '''.split()
 
-	cccOut = {}
-	for key in ccc.keys():
-		if key not in specialKeys:
-			cccOut[key] = ccc[key]
+		cccOut = {}
+		for key in ccc.keys():
+			if key not in specialKeys:
+				cccOut[key] = ccc[key]
 	
-	cccOut['CAPOS'] = [{'title':capo['title'],'fret':0,'mask':capo['mask'],
+		cccOut['CAPOS'] = [{'title':capo['title'],'fret':0,'mask':capo['mask'],
 		            			'accessory_type':'none'} for capo in capos.items]
 
-	cccOut['TUNING_LIST_CLEAN'] = [{'title':tuning['title'],'notes':	tuning['notes'],
+		cccOut['TUNING_LIST_CLEAN'] = [{'title':tuning['title'],'notes':	tuning['notes'],
 		            	               'span':tuning['span'],'octave':tuning['octave'],'accessory_type':'none'} 
 		            	               for tuning in instrument.items]
 	
-	cccOut['TUNINGS'] = [(tuning['title'], [tuning['notes'],tuning['span']],tuning['octave'])
+		cccOut['TUNINGS'] = [(tuning['title'], [tuning['notes'],tuning['span']],tuning['octave'])
 	                      for tuning in instrument.items]
 
-	cccOut['FILTER_LIST_CLEAN'] = [{'title': filter['title'],'desc': 	filter['desc'],
+		cccOut['FILTER_LIST_CLEAN'] = [{'title': filter['title'],'desc': 	filter['desc'],
 	                                'accessory_type': 'none'} 
 		                               for filter in filters.items]
 	
-	cccOut['CHORD_LIST_CLEAN'] = [{'title':c['title'], 'fingering':c['fingering'],             'accessory_type':'none'} for c in chord.items]
-
-	fh = open(ConfigFileName, 'wb')
-	json.dump(cccOut,fh)
-	fh.close()
-		
-
-
-		
+		cccOut['CHORD_LIST_CLEAN'] = [{'title':c['title'], 'fingering':c['fingering'],             	'accessory_type':'none'} for c in chord.items]
 	
+		cccOut['ROOT_LIST_CLEAN'] = [{'title':r['title'], 'noteValue':r['noteValue'], 'accessory_type': 'none'} for r in root.items]
+	
+		fh = open(ConfigFileName, 'wb')
+		json.dump(cccOut,fh)
+		fh.close()
+		mainViewShield.reveal()
+		self.hidden = True
+		
+	def onRestore(self,button):
+		global ccc, instrument, filters, capos, chord
+		ccc = {}
+		for constant in cccInit.__dict__.keys():
+			if constant[0] != '_' and constant[0].isupper(): # a real constant
+				ccc[constant] = cccInit.__dict__[constant]
+		
+		instrument.items = ccc['TUNING_LIST_CLEAN']
+		instrument.currentNumLines = len(instrument.items)
+		instrument.instrument = None
+		instrument.delegator.reload_data()
+		
+		capos.items = ccc['CAPOS']
+		capos.delegator.reload_data()
+		
+		filters.items = ccc['FILTER_LIST_CLEAN']
+		filters.delegator.reload_data()
+		toggle_mode(mainView['button_calc'])
+		fh = open(ConfigFileName,'wb')
+		json.dump(ccc,fh)
+		fh.close()
+		mainViewShield.reveal()
+		self.hidden = True
+		
+def onSaveConfig(button):
+	mainViewShield.conceal()
+	mainView['view_config'].hidden = False
+	mainView['view_config'].bring_to_front()
+
+
 def restoreConfig():
 	global ccc
 	if not os.path.exists(ConfigFileName):
@@ -2890,15 +2949,7 @@ def restoreConfig():
 		createConfig()
 	fh = open(ConfigFileName,'rb')
 	ccc = json.load(fh)
-		
-
-		
-		
-		
-
-		
-	
-	
+			
 ##############################################
 ##############################################
 if __name__ == "__main__":	
@@ -2947,6 +2998,7 @@ if __name__ == "__main__":
 	instrument.reset()
 	tvInst.data_source = tvInst.delegate = fretboard.instrument = instrument
 	
+
 	tvFilters = mainView['tableview_filters']
 	filter_list = ccc['FILTER_LIST_CLEAN']
 	filters = Filters(fretboard)
@@ -3032,9 +3084,9 @@ if __name__ == "__main__":
 	
 	mainView['view_instrumentEditor'].hidden = True
 	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
+	
 		
 	fretboard.set_chordnum(chord_num,num_chords)
-	toggle_mode(mainView['button_calc'])
 	sound.set_volume(0.5)	
-	
+	toggle_mode(mainView['button_calc'])
 	mainView.present(style='full_screen',orientations=('landscape',))
