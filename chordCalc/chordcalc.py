@@ -7,8 +7,8 @@ Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
 Copyright (c) August 19th, 2014 Steven K. Pollack
-Version 2.01
-January 13, 2015
+Version 4.0
+March 3, 2015
 
 
 Free for personal use. All other rights reserved.
