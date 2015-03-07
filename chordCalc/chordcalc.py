@@ -289,30 +289,29 @@ def onScaleSpinner(sender):
 	fretboard.scaleFrets = calc_two_octave_scale(fretboard.location,mode=fretboard.scale_mode)
 	fretboard.set_needs_display()
 	
-def calc_chord_scale():
-	global currentState
+def calc_chord_scale(key=None, chord=None, tuning=None): #
+	global currentState		
 	try:
-		key = currentState['root']['noteValue']
-		chord = currentState['chord']['fingering']
-		tuning = currentState['instrument']['notes']
-		instrument = currentState['instrument']
+		_key = key if key else currentState['root']['noteValue']
+		_chord = chord if chord else currentState['chord']['fingering']
+		_tuning = tuning if tuning else currentState['instrument']['notes']
 		fretboard = currentState['fretboard']
 	except:
-		return []
-					
+		return []			
 	# calculate notes in the current key
-	chordNotes = [(x+key) % 12 for x in chord]
+	chordNotes = [(x + _key) % 12 for x in _chord]
 	capoOffsets = capos.capoOffsets()
 	scale = []
-	for i,string in enumerate(tuning):
+	for i,string in enumerate(_tuning):
 		thisString = []
 		for fret in range(capoOffsets[i],fretboard.numFrets+1): # zero is the open string
 			tone = (string + fret) %12
 			if tone in chordNotes:
-				thisString.append((fret-1,(tone-key)%12))
+				thisString.append((fret-1,(tone - _key)%12))
 		scale.append(thisString)
-
 	return scale
+	
+
 		
 def calc_scale_notes():
 	''' calculate the scale notes for the curent key, instrument and scale type'''
@@ -1162,29 +1161,71 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 
 			
 			elif self.cc_mode == 'I':# identify mode
-				for key in self.touched.keys():
-					values = self.touched[key]
-					x = self.stringX[values[2]]
-					y = self.fretboardYPos(values[3])
-					outchar = ccc['NOTE_NAMES'][values[0]%12].split('/')[0]
-					if values[3]:
-						ui.set_color('red')
-						marker= self.PathCenteredCircle(x,y,self.fingerRadius)
-						marker.fill()
-						ui.set_color('white')
-						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',
+				if not self.scale_notes:
+					for key in self.touched.keys():
+						values = self.touched[key]
+						x = self.stringX[values[2]]
+						y = self.fretboardYPos(values[3])
+						outchar = ccc['NOTE_NAMES'][values[0]%12].split('/')[0]
+						if values[3]:
+							ui.set_color('red')
+							marker= self.PathCenteredCircle(x,y,self.fingerRadius)
+							marker.fill()
+							ui.set_color('white')
+							size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',
 						                                         22),alignment=ui.ALIGN_CENTER)
-						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+							ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
-					else:
-						y = self.nutPosition[0][1]
-						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER)
-						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+						else:
+							y = self.nutPosition[0][1]
+							size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER)
+							ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',26),alignment=ui.ALIGN_CENTER,color='black')
-						size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
-						ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+							size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
+							ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER,color='red')	
-				               
+				else:    
+					for i,string in enumerate(self.scale_notes):
+						for fret,note in string:
+							if fret < capoOffsets[i]:
+								continue
+							x = self.stringX[i]
+							if fret == 1:
+								y = self.fretboardYPos(fret) + 12
+							elif fret:
+								y = self.fretboardYPos(fret)
+							else:
+								y = self.nutPosition[0][1] + self.fingerRadius*0.3
+							ui.set_color('red')
+							if note == self.key:
+								marker= self.PathCenteredSquare(x,y,self.fingerRadius)
+							else:
+								marker= self.PathCenteredCircle(x,y,self.fingerRadius)
+							marker.fill()
+							if self.scale_display_mode == 'degree':
+								outchar = ccc['SCALENOTES'][(note - self.key) % 12]
+							else:
+								outchar = self.noteName(note)
+							ui.set_color('white')
+							size = ui.measure_string(outchar,font=('AmericanTypewriter-Bold',
+						                                         22),alignment=ui.ALIGN_CENTER)
+							ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
+						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)   
+					# mark touched notes
+					for key in self.touched.keys():
+						values = self.touched[key]
+						x = self.stringX[values[2]]					
+						if values[3] == 1:
+							y = self.fretboardYPos(values[3]) + 12
+						elif values[3]:
+							y = self.fretboardYPos(values[3])
+						else:
+							y = self.nutPosition[0][1] + self.fingerRadius*0.3
+						ui.set_color('white')
+						marker= self.PathCenteredCircle(x,y,self.fingerRadius + 10)
+						marker.line_width = 3
+						marker.stroke()
+						  
 			elif self.cc_mode == 'S': # display scale notes
 				ui.set_color('red')
 				if self.scale_notes:
@@ -1328,6 +1369,10 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		angle = math.atan2(DeltaY,DeltaX)*180/math.pi
 		
 		if self.cc_mode == 'I':
+			if fretboard.scale_notes:
+				find.reset()
+				self.set_needs_display()
+				return
 			offsets = capos.capoOffsets()
 			x,y = touch.location
 			string = self.closest(x,self.stringX)
@@ -1504,7 +1549,7 @@ class Instrument(object):
 # action for select
 		
 	def tableview_did_select(self,tableView,section,row): # Instrument
-		global tuningDisplay, spanSpinner, currentState
+		global tuningDisplay, spanSpinner, currentState,find
 		
 		
 		for i in range(len(self.items)):
@@ -1530,6 +1575,7 @@ class Instrument(object):
 		self.tvFilters.reload_data()
 		currentState['capos'].reset()
 		self.fb.scaleFrets = []
+		find.reset()
 		self.updateScaleChord()
 
 		
@@ -2272,7 +2318,7 @@ def playScale(button):
 			time.sleep(fretboard.arpSpeed)
 
 def toggle_mode(button):
-	global currentState #,fretboard,tvFind,tvScale
+	global currentState #,fretboard,tvFind,tvScale,find
 	fretboard = currentState['fretboard']
 	tvFind = currentState['tvFind']
 	tvScale = currentState['tvScale']
@@ -2324,7 +2370,10 @@ def toggle_mode(button):
 	else: # 'I'
 		mainView['button_edit_chord'].title = ''		
 		tvFind.data_source.items = []
-		
+		tvFind.reload_data()
+		fretboard.scale_notes = []
+		find.row = -1
+		fretboard.touched = {}
 	fretboard.set_needs_display()
 	mainView.set_needs_display()
 	
@@ -2335,10 +2384,10 @@ def set_scale_display(button):
 	fretboard.scale_display_mode = button.title
 	fretboard.set_needs_display()
 	
-def find_chords(button):
-	global currentState
+def onFind(button):
+	global currentState,tvFind
 	fretboard = currentState['fretboard']
-	tvFind = currentState['tvFind']
+	#tvFind = currentState['tvFind']
 	fingered = [fretboard.touched[key][0] for key in fretboard.touched.keys()]
 	if fingered:
 		fingered = sorted([x%12 for x in fingered])
@@ -2357,20 +2406,27 @@ def find_chords(button):
 			for chord in ccc['CHORDTYPE']:
 				deltas = set(notevals) ^ set(chord[1]) #those notes not in both (symmetric difference)
 				if not deltas:
-					pure.append("{}{}".format(ccc['NOTE_NAMES'][root],chord[0]))
+					pure.append({'title':"{}{}".format(ccc['NOTE_NAMES'][root],chord[0]),'root':root,
+					             'chord':chord[0], 'accessory_type':'none'})
 				if deltas == set([0]):
-					missing_1.append("{}{} (no root)".format(ccc['NOTE_NAMES'][root],chord[0]))
+					missing_1.append({'title':"{}{} (no root)".format(ccc['NOTE_NAMES'][root],chord[0]),
+					                  'root':root, 'chord':chord[0], 'accessory_type':'none'})
 				if deltas == set([3]) or deltas == set([4]):
-					missing_1.append("{}{} (no 3rd)".format(ccc['NOTE_NAMES'][root],chord[0]))				
+					missing_1.append({'title':"{}{} (no 3rd)".format(ccc['NOTE_NAMES'][root],chord[0]),
+					                  'root':root, 'chord':chord[0], 'accessory_type':'none'})				
 				if deltas == set([7]):
-					missing_1.append( "{}{} (no 5th)".format(ccc['NOTE_NAMES'][root],chord[0]))
+					missing_1.append({'title':"{}{} (no 5th)".format(ccc['NOTE_NAMES'][root],chord[0]), 
+					                 'root':root, 'chord':chord[0], 'accessory_type':'none'})
 				if deltas == set([0,7]):
-					missing_2.append("{}{} (no root or 5th)".format(ccc['NOTE_NAMES'][root],chord[0]))
+					missing_2.append({'title':"{}{} (no root or 5th)".format(ccc['NOTE_NAMES'][root],chord[0]),
+					                  'root':root, 'chord':chord[0], 'accessory_type':'none'})
 		for list in [pure,missing_1,missing_2]:
 			if list:
 				chord_list += list
-				chord_list.append("-------")
+				chord_list.append({'title':"-------",'root':-1, 'chord':-1, 'accessory_type':'none'})
 		tvFind.data_source.items = chord_list
+		tvFind.data_source.currentNumLines = len(chord_list)
+		tvFind.hidden = False
 		tvFind.reload_data()	
 		
 def on_slider(sender):
@@ -2662,7 +2718,80 @@ class SettingsView(ui.View):
 			self.btnOK.enabled = False
 			self.btnDefault.enabled = False	
 			self.tvSettingsList.editing = True
-	
+			
+class Find(object):
+	def __init__(self,items=None,delegator=None):
+		self.delegator = delegator
+		self.items = items
+		self.currentNumLines = len(self.items)	
+		self.row = -1
+		self.key = None
+		self.chord = None
+
+	def reset(self):
+		self.items = []
+		self.row = -1
+		fretboard.scale_notes = {}
+		self.delegator.reload_data()
+			
+	def tableview_number_of_sections(self, tableview):
+		# Return the number of sections (defaults to 1)
+		return 1
+
+	def tableview_number_of_rows(self, tableview, section):
+		# Return the number of rows in the section
+		return self.currentNumLines
+
+	def tableview_cell_for_row(self, tableview, section, row):
+		# Create and return a cell for the given section/row
+		import ui
+		cell = ui.TableViewCell()
+		try:
+			cell.text_label.text = self.items[row]['title']
+		except IndexError:
+			return
+		cell.text_label.text_color = 'red' if self.items[row]['accessory_type'] == 'checkmark' else 'black'		
+		return cell
+
+	def tableview_can_delete(self, tableview, section, row):
+		# Return True if the user should be able to delete the given row.
+		return False
+
+	def tableview_can_move(self, tableview, section, row):
+		# Return True if a reordering control should be shown for the given row (in editing mode).
+		return False
+
+	def tableview_delete(self, tableview, section, row):
+		pass
+
+	def tableview_move_row(self, tableview, from_section, from_row, to_section, to_row):
+		pass
+			
+	def tableview_did_select(self, tableview, section, row):
+		# Called when a row was selected.		
+		global fretboard
+		if self.items[row]['root'] == -1: # separator
+			return
+		if self.items[row]['accessory_type'] == 'checkmark': #deselect this one
+			self.items[row]['accessory_type'] = 'none'
+			self.row = -1
+			fretboard.scale_notes = []
+		else: # its unmarked
+			if self.row != -1: # there is one selected
+				self.items[self.row]['accessory_type'] = 'none' #deselect
+			self.row = row
+			self.items[self.row]['accessory_type'] = 'checkmark'
+			self.key = self.items[row]['root']
+			self.chordtype = self.items[row]['chord']
+			for item in chord.items:
+				if item['title'] == self.items[row]['chord']:
+					self.fingering = item['fingering']
+					break
+			fretboard.scale_notes = calc_chord_scale(key=self.key+1, chord=self.fingering)
+			fretboard.key = self.key
+		self.delegator.reload_data()
+		fretboard.set_needs_display()
+					
 class InstrumentEditor(ui.View):
 	def did_load(self):
 		self.spinnerArray = []
@@ -3010,7 +3139,9 @@ if __name__ == "__main__":
 	mainView['button_edit_filters'].action = filters.onEdit
 
 	tvFind = mainView['tableview_find']
-	tvFind.data_source.items = []
+	find = Find(items=[],delegator=tvFind)
+	tvFind.data_source = find
+	tvFind.delegate = find
 	tvFind.hidden = True
 
 	tvScale = mainView['tableview_scale']
@@ -3027,7 +3158,7 @@ if __name__ == "__main__":
 	mainView['button_scale'].action = toggle_mode
 	mainView['button_scale_notes'].action = set_scale_display
 	mainView['button_scale_tones'].action = set_scale_display
-	mainView['button_find'].action = find_chords
+	mainView['button_find'].action = onFind
 	mainView['button_find'].hidden = True
 	mainView['button_up'].action = mainView['button_down'].action = onPrevNext
 	mainView['button_scale'].action = toggle_mode
@@ -3084,7 +3215,7 @@ if __name__ == "__main__":
 	
 	mainView['view_instrumentEditor'].hidden = True
 	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
-	
+
 		
 	fretboard.set_chordnum(chord_num,num_chords)
 	sound.set_volume(0.5)	
