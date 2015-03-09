@@ -1385,9 +1385,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 						break
 				self.touched[location] = (self.tuning['notes'][string]+fret,self.tuning['octave'],string,fret)
 				octave,tone = divmod((self.tuning['notes'][string]+fret),12)
-				waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave+self.tuning['octave'])
-				
-				sound.play_effect(waveName)
+				sound.play_effect(getWaveName(tone,octave+self.tuning['octave']))
 			self.set_needs_display()
 		elif self.cc_mode == 'S': # label the two octave scale starting at this root
 			x,y = touch.location
@@ -1489,6 +1487,8 @@ class Instrument(object):
 		self.editing = False
 		self.delegator = mainView['tableview_inst_tune']
 		self.currentNumLines = len(self.items)
+		self.waveDir = "default"
+		self.waveType = 'wav'
 	
 	def onEdit(self,button):
 		if self.delegator.editing: 
@@ -2238,6 +2238,19 @@ def onPrevNext(button):
 ###################################################
 # play arpeggio
 
+def getWaveName(tone,octave):
+	equivs = {'guitar': 	('guitar','mp3'),
+	          'mando': 		('guitar','mp3'),
+	          'ukulele':	('guitar','mp3'),
+	          'banjo':		('banjo','mp3'),
+	          'generic':	('default','wav'),
+	          }
+	type = instrument_type()
+	folder,ext = equivs[type]
+	result = "waves/{}/{}{}.{}".format(folder,ccc['NOTE_FILE_NAMES'][tone],octave,ext)
+	return result
+	
+
 def play(button):
 	global currentState
 	fretboard = currentState['fretboard']
@@ -2276,8 +2289,7 @@ def play(button):
 			pass
 			
 		for tone,octave in tones:
-			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave)
-			sound.play_effect(waveName)
+			sound.play_effect(getWaveName(tone,octave))
 			time.sleep(0.05)
 			if button.name == 'button_arp':
 				time.sleep(fretboard.arpSpeed)
@@ -2300,8 +2312,7 @@ def play_tuning(button):
 			octave,tone = divmod(string,12)
 			tones.append((tone,octave+baseOctave))
 		for tone,octave in tones:
-			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave)
-			sound.play_effect(waveName)
+			sound.play_effect(getWaveName(tone,octave))
 			time.sleep(fretboard.arpSpeed)
 			
 def playScale(button):	
@@ -2310,8 +2321,7 @@ def playScale(button):
 	if os.path.exists('waves') and fretboard.scaleFrets:
 		for string,fret in fretboard.scaleFrets:
 			octave,tone = divmod((fretboard.tuning['notes'][string]+fret),12)
-			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave+fretboard.tuning['octave'])
-			sound.play_effect(waveName)	
+			sound.play_effect(getWaveName(tone,octave+fretboard.tuning['octave']))	
 			time.sleep(fretboard.arpSpeed)
 
 def toggle_mode(button):
@@ -2960,8 +2970,7 @@ class InstrumentEditor(ui.View):
 		octaves = [int(tf.text) for tf in self.octaveTextArray]
 		baseOctave = self.octave
 		for i,tone in enumerate(tones):
-			waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octaves[i]+baseOctave)
-			sound.play_effect(waveName)
+			sound.play_effect(getWaveName(tone,octaves[i]+baseOctave))
 			time.sleep(fretboard.arpSpeed)
 	
 def createConfig():
