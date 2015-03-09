@@ -1386,6 +1386,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				self.touched[location] = (self.tuning['notes'][string]+fret,self.tuning['octave'],string,fret)
 				octave,tone = divmod((self.tuning['notes'][string]+fret),12)
 				waveName = 'waves/' + ccc['NOTE_FILE_NAMES'][tone] + "{}.wav".format(octave+self.tuning['octave'])
+				
 				sound.play_effect(waveName)
 			self.set_needs_display()
 		elif self.cc_mode == 'S': # label the two octave scale starting at this root

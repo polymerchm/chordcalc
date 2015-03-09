@@ -2,3 +2,5 @@
 *.zip
 *.dat
 *.ini
+*.mp3
+convertfiles.py
