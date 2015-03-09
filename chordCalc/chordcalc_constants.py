@@ -266,11 +266,11 @@ TUNINGS = [
 	('MANDOLIN', [[NOTE_G, NOTE_D+12, NOTE_A+12, NOTE_E+24], SPAN_DEFAULT_MANDOLIN],3),
 	('Banjo - 5 string', [[NOTE_G+24, NOTE_D, NOTE_G, NOTE_B+12,NOTE_G+24], SPAN_DEFAULT_GUITAR],3),
 	('BOUZOUKI (Celtic)', [[NOTE_G, NOTE_D+12, NOTE_A+12, NOTE_D+24], SPAN_DEFAULT_MANDOLIN],2),
-	('4 STRING GUITAR OPEN G', [[NOTE_G, NOTE_D+12, NOTE_G+12, NOTE_B+12], SPAN_DEFAULT_GUITAR],2),
+	('GUITAR 4 Str OPEN G', [[NOTE_G, NOTE_D+12, NOTE_G+12, NOTE_B+12], SPAN_DEFAULT_GUITAR],2),
 	('UKULELE', [[NOTE_G+12, NOTE_C, NOTE_E, NOTE_A], SPAN_DEFAULT_UKULELE],3),
 	('UKULELE Low G', [[NOTE_G, NOTE_C, NOTE_E, NOTE_A], SPAN_DEFAULT_UKULELE],3),
-	('3 String OPEN G', [[NOTE_G, NOTE_D, NOTE_G+12], SPAN_DEFAULT_GUITAR],2),
-	('3 String OPEN D', [[NOTE_D, NOTE_Fs, NOTE_A], SPAN_DEFAULT_GUITAR],2),
+	('GUITAR 3 Str OPEN G', [[NOTE_G, NOTE_D, NOTE_G+12], SPAN_DEFAULT_GUITAR],2),
+	('GUITAR 3 Str OPEN D', [[NOTE_D, NOTE_Fs, NOTE_A], SPAN_DEFAULT_GUITAR],2),
 	('GUITAR_DROPD', [[NOTE_D, NOTE_A, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
 	('GUITAR_DROPDG', [[NOTE_D, NOTE_G, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
 	('GUITAR_G', [[NOTE_D, NOTE_G, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
@@ -321,10 +321,24 @@ TUNINGS = [
 	('VIHUELA', [[NOTE_G, NOTE_C+12, NOTE_F+12, NOTE_A+12, NOTE_D+24, NOTE_G+24], SPAN_DEFAULT_GUITAR],2),
 	('VIHUELA_C', [[NOTE_C, NOTE_F, NOTE_Bb+12, NOTE_D+12, NOTE_G+12, NOTE_C+24], SPAN_DEFAULT_GUITAR],2),
 	# Others
-	('BAROQUE_GUITAR', [[NOTE_A, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
+	('GUITAR_BAROQUE', [[NOTE_A, NOTE_D+12, NOTE_G+12, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_GUITAR],2),
 	('VIHUELA_MEXICANA', [[NOTE_A+12, NOTE_D+24, NOTE_G+24, NOTE_B+12, NOTE_E+24], SPAN_DEFAULT_UNKNOWN],2)
 ]
 
+
+SOUND_FILE = [
+              [
+               ('guitar','mando','ukulele','bouzouki','balalaika','charango', 'vihuela'),
+               'guitar','mp3'
+              ],
+              [('bass',), 
+               'bass', 'mp3',
+              ],
+              [
+               ('banjo',),
+                'banjo', 'mp3'
+              ],
+             ]
 
 TUNING_LIST_CLEAN = [{'title':title, 'notes':ns[0], 'span':ns[1], 'octave':oct,'accessory_type':'none'} 
 for title,ns,oct in TUNINGS]

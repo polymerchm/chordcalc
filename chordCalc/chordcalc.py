@@ -84,11 +84,24 @@ def rotate(list,index):
 
 	
 def instrument_type(): # return the type of instrument based on current selected 
+	# as a side effect, sets the extension and diretory for the soundfile
 	text = currentState['instrument']['title']
+	waveDir = 'default'
+	waveType = 'wav'
+	done = False
+	for instruments,directory,extension in ccc['SOUND_FILE']:
+		for thisInstrument in instruments:
+			if re.match("{}".format(thisInstrument),text,flags=re.I):
+				waveDir = directory
+				waveType = extension
+				done = True
+				break
+		if done:
+			break	
 	for type in 'guitar mando ukulele banjo'.split():
-		if re.match("^{}".format(type),text,flags=re.I):
-			return type
-	return 'generic'
+		if re.match("{}".format(type),text,flags=re.I):
+			return type,waveDir,waveType
+	return 'generic',waveDir,waveType
 			
 def uniqify(sequence, idfun=None):
 	''' return a unique, order preserved version in input list'''
@@ -357,7 +370,7 @@ def calc_scale_notes():
 def apply_filters(filters,fingerings):
 	''' for the current fingerings and filters, return only those chords that apply'''
 	filter_constraint = {'FULL_CHORD':("R b3 3 #5 5".split(),3)}	
-	instrumentType = instrument_type()
+	instrumentType,_,_ = instrument_type()
 	if not filters:
 		return fingerings
 	filtered = []
@@ -1021,7 +1034,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 
 			
 			markers = [3,5,7]
-			if instrument_type() == 'ukulele':
+			if instrument_type()[0] == 'ukulele':
 				markers.append(10)
 			else:
 				markers.append(9)
@@ -1187,11 +1200,11 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER,color='red')	
 				else:   
 					for i,string in enumerate(self.findScaleNotes):
-						for fret,note in string:
-							if fret < capoOffsets[i]:
+						for fret,note in string:							
+							if fret+1 < capoOffsets[i]:
 								continue
 							x = self.stringX[i]
-							if fret:
+							if fret+1:
 								y = self.fretboardYPos(fret+1)
 							else:
 								y = self.nutPosition[0][1] + self.fingerRadius*0.3
@@ -1564,7 +1577,7 @@ class Instrument(object):
 		               }
 		currentState['instrument'] = self.tuning
 
-		self.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+		self.is5StringBanjo = True if instrument_type()[0] == 'banjo' and len(thisRow['notes']) == 5 else False
 
 		currentState['span'].value = thisRow['span']
 		currentState['span'].limits  = (1,thisRow['span']+2)
@@ -1884,7 +1897,7 @@ class Root(object):
 # 
 
 class Filters(ui.View):
-	global currentState,instrument_type
+	global currentState
 	def __init__(self,fb):
 		self.fb = fb
 		self.filter_list = []
@@ -1906,7 +1919,7 @@ class Filters(ui.View):
 	def set_filters(self):
 		self.filter_list = []
 		self.items = ccc['FILTER_LIST_CLEAN']
-		it = instrument_type()
+		it = instrument_type()[0]
 		if it == 'guitar':
 			self.items = self.items + ccc['GUITAR_LIST_CLEAN']
 		elif it == 'mando':
@@ -2105,7 +2118,7 @@ class Capos(object):
 			minFret = fretEnter.min = 1
 			maxFret = fretEnter.max = numFrets
 			if self.items[row]['title'] == 'Banjo 5th':
-				if instrument_type() != 'banjo':
+				if instrument_type()[0] != 'banjo':
 					return None
 				else:
 					minFret = fretEnter.min = fretboard.fret5thStringBanjo + 1
@@ -2239,15 +2252,8 @@ def onPrevNext(button):
 # play arpeggio
 
 def getWaveName(tone,octave):
-	equivs = {'guitar': 	('guitar','mp3'),
-	          'mando': 		('guitar','mp3'),
-	          'ukulele':	('guitar','mp3'),
-	          'banjo':		('banjo','mp3'),
-	          'generic':	('default','wav'),
-	          }
-	type = instrument_type()
-	folder,ext = equivs[type]
-	result = "waves/{}/{}{}.{}".format(folder,ccc['NOTE_FILE_NAMES'][tone],octave,ext)
+	type,directory,extension = instrument_type()
+	result = "waves/{}/{}{}.{}".format(directory,ccc['NOTE_FILE_NAMES'][tone],octave,extension)
 	return result
 	
 
@@ -2378,7 +2384,7 @@ def toggle_mode(button):
 		mainView['button_edit_chord'].title = ''		
 		tvFind.data_source.items = []
 		tvFind.reload_data()
-		fretboard.scale_notes = []
+		fretboard.findScaleNotes = []
 		find.row = -1
 		fretboard.touched = {}
 	fretboard.set_needs_display()
@@ -2424,10 +2430,8 @@ def onFind(button):
 				if deltas == set([7]):
 					missing_1.append({'title':"{}{} (no 5th)".format(ccc['NOTE_NAMES'][root],chord[0]), 
 					                 'root':root, 'chord':chord[0], 'accessory_type':'none'})
-				if deltas == set([0,7]):
-					missing_2.append({'title':"{}{} (no root or 5th)".format(ccc['NOTE_NAMES'][root],chord[0]),
-					                  'root':root, 'chord':chord[0], 'accessory_type':'none'})
-		for list in [pure,missing_1,missing_2]:
+
+		for list in [pure,missing_1]:
 			if list:
 				chord_list += list
 				chord_list.append({'title':"-------",'root':-1, 'chord':-1, 'accessory_type':'none'})
@@ -2500,7 +2504,7 @@ def applyState(state):
 		               }
 	currentState['instrument'] = instrument.tuning
 
-	instrument.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+	instrument.is5StringBanjo = True if instrument_type()[0] == 'banjo' and len(thisRow['notes']) == 5 else False
 
 	currentState['span'].value = thisRow['span']
 	currentState['span'].limits  = (1,thisRow['span']+2)
@@ -2587,7 +2591,7 @@ class SettingListDelegate(object):
 		                'row':		row
 		               }
 		currentState['instrument'] = instrument.tuning
-		instrument.is5StringBanjo = True if instrument_type() == 'banjo' and len(thisRow['notes']) == 5 else False
+		instrument.is5StringBanjo = True if instrument_type()[0] == 'banjo' and len(thisRow['notes']) == 5 else False
 		currentState['span'].value = thisRow['span']
 		currentState['span'].limits  = (1,thisRow['span']+2)
 		
