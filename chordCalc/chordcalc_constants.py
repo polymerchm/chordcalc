@@ -2,6 +2,7 @@
 
 #Constants
 
+SCREEN_SIZE = {'iPad':(1024.0, 768.0), 'iPhone6':(375.0,667,0)}
 
 # Note numbers - add multiples of 12 for higher octaves
 

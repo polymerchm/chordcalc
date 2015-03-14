@@ -84,7 +84,7 @@ def rotate(list,index):
 
 	
 def instrument_type(): # return the type of instrument based on current selected 
-	# as a side effect, sets the extension and diretory for the soundfile
+	# and the extension and diretory for the soundfile
 	text = currentState['instrument']['title']
 	waveDir = 'default'
 	waveType = 'wav'
@@ -93,6 +93,10 @@ def instrument_type(): # return the type of instrument based on current selected
 		for thisInstrument in instruments:
 			if re.match("{}".format(thisInstrument),text,flags=re.I):
 				waveDir = directory
+				if not os.path.exists(os.path.join('waves',waveDir)):
+					done = True
+					waveDir = 'default'
+					break
 				waveType = extension
 				done = True
 				break
@@ -2271,6 +2275,8 @@ def play(button):
 				cc = fretboard.ChordPositions[fretboard.currentPosition]
 			except TypeError: # no chords yet
 				return
+			except IndexError: #oops
+				return
 			frets = cc[2]
 			dead_notes = [item[3] == 'X' for item in cc[0]]
 			tones = []
@@ -3098,10 +3104,20 @@ if __name__ == "__main__":
 		console.alert('waves sound files not present, run makeWave.py')
 		sys.exit(1)
 		
+	missingInstr = ''
+	for dir in [entry[1] for entry in cccInit.SOUND_FILE]:		
+		if not os.path.exists(os.path.join('waves',dir)):
+			missingInstr += "{} ".format(dir)
+	if missingInstr:
+		console.hud_alert('{} are not available, default sounds will be used'.format(missingInstr),'error',2)
+		
+		
 	if not os.path.exists(ConfigFileName):
 		createConfig() 
 	else:
 		restoreConfig()
+		
+	
 		
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
@@ -3230,3 +3246,4 @@ if __name__ == "__main__":
 	sound.set_volume(0.5)	
 	toggle_mode(mainView['button_calc'])
 	mainView.present(style='full_screen',orientations=('landscape',))
+
