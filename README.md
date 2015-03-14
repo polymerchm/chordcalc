@@ -11,6 +11,10 @@ Updated to be a full featured stringed instrument chord analysis tool by Steven 
 
 generates a set of 96 2 second wave files  used by chordcalc.py to play the sound of the notes.
 
+- ** getWaves.py**
+
+downloads realistic sounds form github
+
 - **chordcalc.py**
 
 - **chordcalc_constants.py**

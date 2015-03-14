@@ -80,18 +80,18 @@ class Envelope():
 		return env
 
 
-if os.path.exists('waves'):
+if os.path.exists('waves/generic/'):
 	response = console.alert('', 'DIRECTORY EXISTS. OVERWRITE?', 'yes','no')
 	if response == 2:
 		sys.exit()
 	else:
-		files = glob.glob('waves/*')
+		files = glob.glob('waves/generic/*')
 		for f in files:
 			os.remove(f)
-		os.rmdir('waves')
-		os.mkdir('waves')
+		os.rmdir('waves/generic/')
+		os.mkdir('waves/generic/')
 else:
-	os.mkdir('waves')
+	os.mkdir('waves/generic')
 	
 sampleRate = 221000 # of samples per second (standard)
 numChan = 1 # of channels (1: mono, 2: stereo)
@@ -128,7 +128,7 @@ for octave in range(8):
 		data = sample.astype(int16)
 
 	
-		fname = 'waves/{0}_{1}.wav'.format(note_name[note],octave)
+		fname = 'waves/generic/{0}_{1}.wav'.format(note_name[note],octave)
 		f = wave.open(fname, 'w')
 		f.setparams((numChan, dataSize, sampleRate, numSamples, "NONE", "Uncompressed"))
 		f.writeframes(data.tostring())
