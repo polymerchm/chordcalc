@@ -7,8 +7,10 @@ Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
 Copyright (c) August 19th, 2014 Steven K. Pollack
-Version 4.0
+Version 5.0
 March 3, 2015
+
+iPhone 6 Version
 
 
 Free for personal use. All other rights reserved.
@@ -3118,29 +3120,37 @@ if __name__ == "__main__":
 		restoreConfig()
 		
 	
+	screenSize = ui.get_screen_size()
+	screenSize = (375.0, 667.0) # iPhone 6
+	sv = ui.ScrollView()
+	
 		
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
 	mainViewShield = Shield(mainView)
+	leftView = ui.load_view('ccLeft.pyui')
+	leftViewShield = Shield(leftView)
+	rightView = ui.load_view('ccRight.pyui')
+	rightViewSHield = Shield(rightView)
 	
 	num_chords = mainView['num_chords']
 	chord_num = mainView['chord_num']
 	middle_field = mainView['label_middle']
 	fretboard = mainView['fretboard']
-	tvRoot = mainView['tableview_root']
+	tvRoot = leftView['tableview_root']
 	root_list = ccc['ROOT_LIST_CLEAN']
 	root = Root(root_list,fretboard)
 	tvRoot.data_source = tvRoot.delegate = root
 	
-	tvType = mainView['tableview_type']
+	tvType = leftView['tableview_type']
 	chord_list = ccc['CHORD_LIST_CLEAN']
 	chord = Chord(chord_list,fretboard)
 	chord.reset()
 	tvType.data_source = tvType.delegate = chord
-	mainView['button_edit_chord'].action = chord.onEdit
+	leftView['button_edit_chord'].action = chord.onEdit
 	
-	tvInst = mainView['tableview_inst_tune']
-	tuningDisplay = mainView['button_tuning']
+	tvInst = rightView['tableview_inst_tune']
+	tuningDisplay = rightView['button_tuning']
 	tuningDisplay.title = ''
 	tuningDisplay.action = play_tuning
 
@@ -3148,12 +3158,12 @@ if __name__ == "__main__":
 	# fretboard is a custom view and is instanciated by the ui.load_view process
 	tuning_list = ccc['TUNING_LIST_CLEAN']
 	instrument = Instrument(tuning_list,fretboard)
-	mainView['button_edit_instrument'].action = instrument.onEdit
+	rightView['button_edit_instrument'].action = instrument.onEdit
 	instrument.reset()
 	tvInst.data_source = tvInst.delegate = fretboard.instrument = instrument
 	
 
-	tvFilters = mainView['tableview_filters']
+	tvFilters = rightView['tableview_filters']
 	filter_list = ccc['FILTER_LIST_CLEAN']
 	filters = Filters(fretboard)
 	instrument.tvFilters = tvFilters
@@ -3161,15 +3171,15 @@ if __name__ == "__main__":
 	filters.instrument = instrument
 	tvFilters.data_source = tvFilters.delegate = filters
 	tvFilters.hidden = False
-	mainView['button_edit_filters'].action = filters.onEdit
+	rightView['button_edit_filters'].action = filters.onEdit
 
-	tvFind = mainView['tableview_find']
+	tvFind = leftView['tableview_find']
 	find = Find(items=[],delegator=tvFind)
 	tvFind.data_source = find
 	tvFind.delegate = find
 	tvFind.hidden = True
 
-	tvScale = mainView['tableview_scale']
+	tvScale = leftView['tableview_scale']
 	tvScale.data_source.items = []
 	tvScale.hidden = True	
 	scale_list = ccc['SCALE_LIST_CLEAN']
@@ -3192,8 +3202,8 @@ if __name__ == "__main__":
 	mainView['btn_sharpFlat'].hidden = True
 	mainView['slider_arp'].action = on_slider_arp
 	mainView['lbl_chord'].hidden = True
-	mainView['lbl_fullchord'].hidden = True
-	mainView['lbl_definition'].hidden = True
+	rightView['lbl_fullchord'].hidden = True
+	rightView['lbl_definition'].hidden = True
 
 	
 	currentState['tvFind'] = tvFind
@@ -3201,10 +3211,10 @@ if __name__ == "__main__":
 	currentState['fretboard'] = fretboard
 	currentState['mainView'] = mainView
 	
-	tvCapos = mainView['tableview_capos']
+	tvCapos = rightView['tableview_capos']
 	capo_list = ccc['CAPOS']
 	capos = Capos(capo_list)
-	mainView['button_edit_capos'].action = capos.onEdit
+	rightView['button_edit_capos'].action = capos.onEdit
 	tvCapos.data_source = tvCapos.delegate = capos
 	
 	spanSpinner = Spinner(spinnerSize=(100,50),
@@ -3226,20 +3236,20 @@ if __name__ == "__main__":
 	scaleSpinner.position = (570,300)
 	scaleSpinner.hidden = True
 	
-	mainView['view_fretEnter'].hidden = True
+	#rightView['view_fretEnter'].hidden = True
 	mainView['sp_span'].hidden = True
 	currentState['span'] = mainView['sp_span']
-	mainView['button_save_config'].action = onSaveConfig
+	rightView['button_save_config'].action = onSaveConfig
 	
-	mainView['view_settingsView'].hidden = True
+	#rightView['view_settingsView'].hidden = True
 	settings = SettingListDelegate()
-	mainView['view_settingsView']['tv_SettingsList'].data_source = settings
-	mainView['view_settingsView']['tv_SettingsList'].delegate = settings
-	mainView['button_save'].action = mainView['view_settingsView'].onSettingsSave
-	mainView['button_load'].action = mainView['view_settingsView'].onSettingsLoad
+	#rightView['view_settingsView']['tv_SettingsList'].data_source = settings
+	#rightView['view_settingsView']['tv_SettingsList'].delegate = settings
+	rightView['button_save'].action = mainView['view_settingsView'].onSettingsSave
+	rightView['button_load'].action = mainView['view_settingsView'].onSettingsLoad
 	
-	mainView['view_instrumentEditor'].hidden = True
-	mainView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
+	#rightView['view_instrumentEditor'].hidden = True
+	#rightView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
 
 		
 	fretboard.set_chordnum(chord_num,num_chords)
