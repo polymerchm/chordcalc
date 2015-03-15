@@ -11,9 +11,9 @@ Updated to be a full featured stringed instrument chord analysis tool by Steven 
 
 generates a set of 96 2 second wave files  used by chordcalc.py to play the sound of the notes.
 
-- ** getWaves.py**
+- **getWaves.py**
 
-downloads realistic sounds form github
+downloads realistic sounds from github
 
 - **chordcalc.py**
 
@@ -37,6 +37,7 @@ The new features in 4.0 are:
 
 - Sweep gestures and long-touch on the fingerboard are enabled
 
+- sounds will now try to use "realistic sounds" if they have been downloaded using getWaves.py
 
 *Editing the Tables*
 
