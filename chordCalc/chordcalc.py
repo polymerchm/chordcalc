@@ -10,7 +10,7 @@ Copyright (c) August 19th, 2014 Steven K. Pollack
 Version 5.0
 March 3, 2015
 
-iPhone 6 Version
+Generalized iOS device version
 
 
 Free for personal use. All other rights reserved.
@@ -67,6 +67,62 @@ import Shield; 			reload(Shield); 			from Shield import Shield
 
 SettingsFileName = 'settings.ini'
 ConfigFileName = 'config.ini'
+
+
+    
+Triptych = {    # Panel, adjustment in position and size
+    "tableview_scale":				("L",(40,0,30,-50)),
+    "tableview_find":					("L",None),
+    "tableview_root":					("L",(0,0,+30,-50)),
+    "tableview_type":					("L",(40,5,30,-50)),
+    "label1":									("L",None), 
+    "tri_chord_label":				("C",None),
+    "button_down":						("C",(30,10,0,0)),
+    "button_up":							("C",(30,10,0,0)),
+    "tableview_inst_tune":		("R",(30,0,0,-40)), 
+    "label2":									("R",None),
+    "arpeggio":								("C",(30,0,0,0)),
+    "button_chord":						("C",(30,0,0,0)),
+    "button_arp":							("C",(30,0,0,0)),
+    "fretboard":							("C",(70,-20,-50,0)),
+    "chord_num":							("C",(30,0,0,0)), 
+    "label_middle":						("C",(30,0,0,0)), 
+    "num_chords":							("C",(30,0,0,0)), 
+    "tableview_filters":			("R",(30,0,0,-40)), 
+    "button_tuning":					("R",None), 
+    "button_scale":						("C",(30,0,0,0)),
+    "button_find":						("C",(30,0,0,0)), 
+    "button_ident":						("C",(25,0,0,0)), 
+    "button_calc":						("C",(20,0,0,0)), 
+    "button_scale_notes":			("C",(25,0,0,0)), 
+    "button_scale_tones":			("C",(25,0,0,0)), 
+    "button_play_scale":			("C",(25,0,0,0)),
+    "slider_volume":					("C",(35,0,0,0)), 
+    "slider_arp":							("C",(35,0,0,0)),
+    "lbl_chord":							("R",None), 
+    "lbl_fullchord":					("R",None), 
+    "lbl_definition":					("R",None), 
+    "btn_sharpFlat":					("C",(25,0,0,0)), 
+    "tableview_capos":				("R",(32,-30,0,-30)), 
+    "view_fretEnter":					("R",None), 
+    "lbl_span":								("C",(30,0,0,0)), 
+    "label6":									("C",(30,0,0,0)), 
+    "label7":									("C",(30,0,0,0)), 
+    "button_save":						("R",None), 		
+    "button_load":						("R",None), 
+    "button_edit_instrument":	("R",(10,0,0,0)),
+    "button_edit_filters":		("R",(10,0,0,0)),
+    "button_edit_capos":			("R",(10,-20,0,0)),
+    "button_edit_chord":			("L",None),
+    "button_save_config":			("R",None), 
+    "button_new_instrument":	("R",None), 
+    "view_settingsView":			("R",None), 
+    "view_instrumentEditor":	("R",None), 
+    "view_config":						("R",(10,0,0,0)), 
+    "sp_span":								("C",None),
+    "sp_scale":								("C",None),
+    "tri_chord_label":				("C",None),
+}
 
 def listShuffle(list,row_from, row_to):
 	''' a method to re-order a list '''
@@ -784,10 +840,12 @@ def setChordSpelling():
 				outChecked = outChar[1]
 		outString += outChecked + ' '
 		defString += ccc['SCALENOTES'][tone] + ' '
-	mainView['lbl_fullchord'].hidden = False
-	mainView['lbl_fullchord'].text = outString.strip()
-	mainView['lbl_definition'].hidden = False
-	mainView['lbl_definition'].text = defString.strip()
+	panelView('lbl_fullchord').hidden = False
+	panelView('lbl_fullchord').text = outString.strip()
+	panelView('lbl_definition').hidden = False
+	panelView('lbl_definition').text = defString.strip()
+	if not iPad:
+		panelView('tri_chord_label').text = currentState['root']['title'] + currentState['chord']['title']
 
 def relativeMajorDisplay():
 	''' display the relative major for a greek mode'''
@@ -800,10 +858,10 @@ def relativeMajorDisplay():
 	
 	if scale in ccc['TRUE_ROOT'].keys():
 		text = "relative to {}".format(ccc['NOTE_NAMES'][(key-ccc['TRUE_ROOT'][scale])%12])
-		mainView['lbl_definition'].text = text		
-		mainView['lbl_definition'].hidden = False
+		panelView('lbl_definition').text = text		
+		panelView('lbl_definition').hidden = False
 	else:
-		mainView['lbl_definition'].hidden = True
+		panelView('lbl_definition').hidden = True
 
 	
 	
@@ -814,12 +872,9 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 #note that this is instanciated by the load process.  
 	global currentState,middle_label
 	def did_load(self):
-		self.fbWidth = int(self.bounds[2])
-		self.fbHeight = int(self.bounds[3])
 		self.nutOffset = 20	
 		self.numFrets = 14
 		self.offsetFactor = 0.1		
-		self.scale = 2*(self.fbHeight - self.nutOffset) 
 		self.markerRadius = 10
 		self.fingerRadius = 15
 		self.image = ''
@@ -858,7 +913,9 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 	def sharpFlat(self,sender): #toggle
 		self.sharpFlatState = 'b' if self.sharpFlatState == '#' else '#'
 		self.set_needs_display()
-		
+	
+	def scale(self):
+		return 2*(self.height - self.nutOffset) 	
 					
 	def set_tuning(self,instrument): # store current value of tuning parameters
 		self.tuning = instrument.get_tuning()
@@ -896,13 +953,13 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 
 	
 	def fretboardYPos(self,fret):
-		return int((self.fretDistance(self.scale,fret) + self.fretDistance(self.scale,fret-1))/2.0)	
+		return int((self.fretDistance(self.scale(),fret) + self.fretDistance(self.scale(),fret-1))/2.0)	
 		
 	def stringSpacing(self):
 		global currentState
 		numStrings = len(currentState['instrument']['notes'])
-		offset = int(self.offsetFactor*self.fbWidth)
-		return (numStrings,offset,int((self.fbWidth-2*offset)/float(numStrings-1)))
+		offset = int(self.offsetFactor*self.width)
+		return (numStrings,offset,int((self.width-2*offset)/float(numStrings-1)))
 		
 	def PathCenteredCircle(self,x,y,r):
 		""" return a path for a filled centered circle """
@@ -913,184 +970,183 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		return ui.Path.rect(x -r, y -r, 2*r,2*r)		
 		
 		
-	def drawCapo(self,fret):
-		global currentState
-		width = self.fbWidth
-		numStrings,offset,ss = self.stringSpacing()
-		segment = int(width/float(numStrings))
-		capos = currentState['capos'].capos
-		mask = capos[fret]
-		if not instrument.is5StringBanjo: #conventional instrument
-			padHeight = self.fretDistance(self.scale,fret) - self.fretDistance(self.scale,fret-1) - 10
-			padY = self.fretDistance(self.scale,fret-1)	+	5
-			padStartX = 0
-			for i,flag in enumerate(mask):
-				if not flag:
-					padStartX += segment
-				else:
-					index = i
-					break
-			padEndX = index*segment
-			for i in range(index,len(mask)):
-				if mask[i]:
-					padEndX += segment
-					continue
-				else:
-					break
-			pad = ui.Path.rect(padStartX,padY,padEndX-padStartX,padHeight)
-			ui.set_color('#800040')
-			pad.fill()
-		
-		
-			barHeight = int((self.fretDistance(self.scale,14) - self.fretDistance(self.scale,13))*.75)
-			barY = self.fretboardYPos(fret) - barHeight/2
-			barX = 0
-			bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
-			ui.set_color('#E5E5E5')
-			bar.fill()
-		elif len(mask) != 1: #is a banjo, main capo  partial capos
-			padHeight = self.fretDistance(self.scale,fret) - self.fretDistance(self.scale,fret-1) - 10
-			padY = self.fretDistance(self.scale,fret-1)	+	5
-			padStartX = segment
-			width -= segment
-			barX = segment
-			pad = ui.Path.rect(padStartX,padY,width,padHeight)
-			ui.set_color('#800040')
-			pad.fill()					
-			barHeight = int((self.fretDistance(self.scale,14) - self.fretDistance(self.scale,13))*.75)
-			barY = self.fretboardYPos(fret) - barHeight/2
-			bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
-			ui.set_color('#E5E5E5')
-			bar.fill()
-		else: # is banjo, 5th string spike
-			x = self.stringX[0]
-			y = self.fretboardYPos(fret)
-			spike = self.PathCenteredSquare(x,y,20)
-			ui.set_color('#E5E5E5')
-			spike.fill()
-			
 
 		
-		
-		
-	def drawFingerboard(self):
+	def draw(self):
 		global currentState
-		if self.tuning:
-			
-			# draw fingerboard
-			
-			startX = 0
-			startY = 0
-			width = self.fbWidth
-			height = self.fbHeight
-			if instrument.is5StringBanjo:
-				segment = int(width/5.0)
+		
+		def drawCapo(fret):
+			width = self.width
+			numStrings,offset,ss = self.stringSpacing()
+			segment = int(width/float(numStrings))
+			capos = currentState['capos'].capos
+			mask = capos[fret]
+			if not instrument.is5StringBanjo: #conventional instrument
+				padHeight = self.fretDistance(self.scale(),fret) - self.fretDistance(self.scale(),fret-1) - 10
+				padY = self.fretDistance(self.scale(),fret-1)	+	5
+				padStartX = self.frame[0]
+				for i,flag in enumerate(mask):
+					if not flag:
+						padStartX += segment
+					else:
+						index = i
+						break
+				padEndX = index*segment
+				for i in range(index,len(mask)):
+					if mask[i]:
+						padEndX += segment
+						continue
+					else:
+						break
+				pad = ui.Path.rect(padStartX,padY,padEndX-padStartX,padHeight)
+				ui.set_color('#800040')
+				pad.fill()
+		
+		
+				barHeight = int((self.fretDistance(self.scale(),14) - self.fretDistance(self.scale(),13))*.75)
+				barY = self.fretboardYPos(fret) - barHeight/2
+				barX = 0
+				bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
+				ui.set_color('#E5E5E5')
+				bar.fill()
+			elif len(mask) != 1: #is a banjo, main capo  partial capos
+				padHeight = self.fretDistance(self.scale(),fret) - self.fretDistance(self.scale(),fret-1) - 10
+				padY = self.fretDistance(self.scale(),fret-1)	+	5
+				padStartX = segment
 				width -= segment
-				startX = segment
-			fretboard = ui.Path.rect(startX, startY, width, height)
-			ui.set_color('#4C4722')
-			fretboard.fill()
-					
+				barX = segment
+				pad = ui.Path.rect(padStartX,padY,width,padHeight)
+				ui.set_color('#800040')
+				pad.fill()					
+				barHeight = int((self.fretDistance(self.scale(),14) - self.fretDistance(self.scale(),13))*.75)
+				barY = self.fretboardYPos(fret) - barHeight/2
+				bar = ui.Path.rounded_rect(barX,barY,width,barHeight,10)
+				ui.set_color('#E5E5E5')
+				bar.fill()
+			else: # is banjo, 5th string spike
+				x = self.stringX[0]
+				y = self.fretboardYPos(fret)
+				spike = self.PathCenteredSquare(x,y,20)
+				ui.set_color('#E5E5E5')
+				spike.fill()
+				
+		def drawFingerboard():	
+			if self.tuning:			
+			# draw fingerboard			
+				startX = 0
+				startY = 0
+				width = self.width
+				height = self.height
+				if instrument.is5StringBanjo:
+					segment = int(width/5.0)
+					width -= segment
+					startX = segment
+				ui.set_color('#4C4722')	
+				fb = ui.Path.rect(startX, startY, width, height)				
+				fb.fill()
+
 			# draw nut
 			
-			nut = ui.Path.rect(startX,startY,width,self.nutOffset)
-			ui.set_color('#ECF8D7')
-			nut.fill()
-			
-			if instrument.is5StringBanjo: # draw 5th string segment
-				radius = 30
-				fret5SB = self.fret5thStringBanjo
-				ui.set_color('#4C4722')
-				fretboard = ui.Path.rect(0,self.fretDistance(self.scale,fret5SB-1)+radius,segment,height-radius)
-				fretboard.fill()
-				fretboard = ui.Path.rect(radius,self.fretDistance(self.scale,fret5SB-1),segment-radius,radius)
-				fretboard.fill()
-				semi = ui.Path()
-				semi.move_to(radius,self.fretDistance(self.scale,fret5SB-1)+radius)
-				semi.add_arc(radius,self.fretDistance(self.scale,fret5SB-1)+radius,radius,0,270)
-				semi.close()
-				semi.fill()
+				nut = ui.Path.rect(startX,startY,width,self.nutOffset)
+				ui.set_color('#ECF8D7')
+				nut.fill()
+				
+				if instrument.is5StringBanjo: # draw 5th string segment
+					radius = 30
+					fret5SB = self.fret5thStringBanjo
+					ui.set_color('#4C4722')
+					fretboard = ui.Path.rect(0,self.fretDistance(self.scale(),fret5SB-1)+radius,segment,height-radius)
+					fretboard.fill()
+					fretboard = ui.Path.rect(radius,self.fretDistance(self.scale(),fret5SB-1),segment-radius,radius)
+					fretboard.fill()
+					semi = ui.Path()
+					semi.move_to(radius,self.fretDistance(self.scale(),fret5SB-1)+radius)
+					semi.add_arc(radius,self.fretDistance(self.scale(),fret5SB-1)+radius,radius,0,270)
+					semi.close()
+					semi.fill()
 #
-				square = ui.Path.rect(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius,radius,radius)
-				square.fill()
-				semi = ui.Path()
-				semi.move_to(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius)
-				semi.add_arc(segment-radius,self.fretDistance(self.scale,fret5SB-1)-radius,radius,90,180)
-				ui.set_color('white')
-				semi.fill()
+					square = ui.Path.rect(segment-radius,self.fretDistance(self.scale(),fret5SB-1)-radius,radius,radius)
+					square.fill()
+					semi = ui.Path()
+					semi.move_to(segment-radius,self.fretDistance(self.scale(),fret5SB-1)-radius)
+					semi.add_arc(segment-radius,self.fretDistance(self.scale(),fret5SB-1)-radius,radius,90,180)
+					if iPad:
+						ui.set_color('white')
+					else:
+						ui.set_color((0.8,0.8,0.7))
+					semi.fill()
 				
 		#draw frets
 		
-			ui.set_color('white')
-			fretSpace = int((self.fbHeight - 2*self.nutOffset)/(self.numFrets))
+				ui.set_color('white')  #temp
+				fretSpace = int((self.height - 2*self.nutOffset)/(self.numFrets))
 
-			self.fretY = [0]
-			for index in range(self.numFrets):
-				yFret = self.fretDistance(self.scale,index+1)
-				self.fretY.append(yFret)
-				self.PrevFretY = yFret
-				fret = ui.Path()
-				fret.line_width = 3
-				if instrument.is5StringBanjo and index < fret5SB-1:
-					fret.move_to(startX,yFret)
+				self.fretY = [0]
+				for index in range(self.numFrets):
+					yFret = self.fretDistance(self.scale(),index+1)
+					self.fretY.append(yFret)
+					self.PrevFretY = yFret
+					fret = ui.Path()
+					fret.line_width = 3
+					if instrument.is5StringBanjo and index < fret5SB-1:
+						fret.move_to(startX,yFret)
+					else:
+						fret.move_to(0,yFret)
+					fret.line_to(self.width,yFret)
+					fret.stroke()
+
+			
+				markers = [3,5,7]
+				if instrument_type()[0] == 'ukulele':
+					markers.append(10)
 				else:
-					fret.move_to(0,yFret)
-				fret.line_to(self.fbWidth,yFret)
-				fret.stroke()
-
-			
-			markers = [3,5,7]
-			if instrument_type()[0] == 'ukulele':
-				markers.append(10)
-			else:
-				markers.append(9)
-			for index in markers:		
-				markeryPos = self.fretboardYPos(index)
-				marker= self.PathCenteredCircle(int(0.5*self.fbWidth), markeryPos, self.markerRadius)
-				marker.fill()
+					markers.append(9)
+				for index in markers:		
+					markeryPos = self.fretboardYPos(index)
+					marker= self.PathCenteredCircle(int(0.5*self.width), markeryPos, self.markerRadius)
+					marker.fill()
 			
 
-			markery12 = markeryPos = self.fretboardYPos(12)
-			for xfraction in [0.25,0.75]:
-				marker= self.PathCenteredCircle(int(xfraction*self.fbWidth), markery12, self.markerRadius)
-				marker.fill()
+				markery12 = markeryPos = self.fretboardYPos(12)
+				for xfraction in [0.25,0.75]:
+					marker= self.PathCenteredCircle(int(xfraction*self.width), markery12, self.markerRadius)
+					marker.fill()
 				
 		# draw strings
 		
 		#assume width is 1.5" and strings are 1/8" from edge
-			numStrings,offset,ss = self.stringSpacing()
-			self.nutPosition = []
-			ui.set_color('grey')
-			self.stringX = []
-			for index in range(numStrings):
-				startY = 0
-				if instrument.is5StringBanjo and index == 0:
-					startY = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
-				xString = offset + index*ss
-				self.stringX.append(xString)
-				string = ui.Path()
-				string.line_width = 3
-				string.move_to(xString,startY)
-				string.line_to(xString,self.fbHeight)
-				string.stroke()
-				self.nutPosition.append((xString,int(0.5* self.nutOffset)))
+				numStrings,offset,ss = self.stringSpacing()
+				self.nutPosition = []
+				ui.set_color('grey')
+				self.stringX = []
+				for index in range(numStrings):
+					startY = 0
+					if instrument.is5StringBanjo and index == 0:
+						startY = (self.fretDistance(self.scale(),fret5SB)+self.fretDistance(self.scale(),fret5SB-1))/2
+					xString = offset + index*ss
+					self.stringX.append(xString)
+					string = ui.Path()
+					string.line_width = 3
+					string.move_to(xString,startY)
+					string.line_to(xString,self.height)
+					string.stroke()
+					self.nutPosition.append((xString,int(0.5* self.nutOffset)))
 				
 				
 		# if 5 string banjo, draw tuning peg
 		
-			if instrument.is5StringBanjo:
-				pegX = self.stringX[0]
-				pegY = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
-				peg = self.PathCenteredCircle(pegX,pegY,15)
-				ui.set_color('#B2B2B2')
-				peg.fill()
-				peg = self.PathCenteredCircle(pegX-7,pegY-6,2)
-				ui.set_color('white')
-				peg.fill()
-		
-		
-	def draw(self):
-		global currentState
+				if instrument.is5StringBanjo:
+					pegX = self.stringX[0]
+					pegY = (self.fretDistance(self.scale(),fret5SB)+self.fretDistance(self.scale(),fret5SB-1))/2
+					peg = self.PathCenteredCircle(pegX,pegY,15)
+					ui.set_color('#B2B2B2')
+					peg.fill()
+					peg = self.PathCenteredCircle(pegX-7,pegY-6,2)
+					ui.set_color('white')
+					peg.fill()
+				
+				
+				
 		self.tuning = currentState['instrument']
 		self.root = currentState['root']
 		self.chord = currentState['chord']
@@ -1106,11 +1162,11 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 			pass
 		
 
-		self.drawFingerboard()
+		drawFingerboard()
 		
 		capos = currentState['capos']
 		for key in capos.capos.keys():
-			self.drawCapo(key)
+			drawCapo(key)
 		
 		if self.tuning:			
 			capoOffsets = capos.capoOffsets()
@@ -1126,7 +1182,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 						x,y,chordtone,nutmarker = string
 						if i == 0 and instrument.is5StringBanjo:
 							if fretPositions[i] == -1:
-								y = (self.fretDistance(self.scale,self.fret5thStringBanjo)+self.fretDistance(self.scale,self.fret5thStringBanjo-1))/2
+								y = (self.fretDistance(self.scale(),self.fret5thStringBanjo)+self.fretDistance(self.scale(),self.fret5thStringBanjo-1))/2
 						try:
 							if fretPositions[i] == capoOffsets[i]:
 								nutmarker = True
@@ -1158,7 +1214,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 								y = self.fretboardYPos(fret+1)
 							else:
 								if string == 0 and instrument.is5StringBanjo:
-									y = (self.fretDistance(self.scale,fret5SB)+self.fretDistance(self.scale,fret5SB-1))/2
+									y = (self.fretDistance(self.scale(),fret5SB)+self.fretDistance(self.scale(),fret5SB-1))/2
 								else:
 									y = self.nutPosition[0][1]
 							ui.set_color('red')
@@ -1270,7 +1326,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 						                                         22),alignment=ui.ALIGN_CENTER)
 							ui.draw_string(outchar,(int(x-0.5*size[0]),int(y-0.5*size[1]),0,0),
 						               font=('AmericanTypewriter-Bold',22),alignment=ui.ALIGN_CENTER)
-				if self.scaleFrets: # mark the scale notes
+				if hasattr(self,'scaleFrets') and self.scaleFrets: # mark the scale notes
 					ui.set_color('yellow')
 					self.fifthPresent = False # prevent 5 and 5# from both being highlighted chord tones.
 					
@@ -1437,9 +1493,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 					return
 				self.currentPosition += increment
 				self.currentPosition = max(0,self.currentPosition)
-				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)
-				
-					
+				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)					
 			elif self.wasLongTouch: #jump to this fret
 				x,y = touch.location
 				fret = self.closest(y,self.fretY)
@@ -1485,9 +1539,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				atNut = 'X' if fretPosition else 'O'
 			else:
 				ypos = self.fretboardYPos(fretPosition)
-			chordDrawPositions.append((xpos,ypos,note,atNut))		
-			
-		
+			chordDrawPositions.append((xpos,ypos,note,atNut))				
 		return chordDrawPositions		
 
 	def get_instrument(self):
@@ -1497,14 +1549,14 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 # instrument/tuning object
 	
 class Instrument(object):	
-	global currentState, mainView
+	global currentState
 	def __init__(self, items, fb):
 		self.items = items
 		self.fb = fb
 		self.instrument = currentState['instrument']
 		self.is5StringBanjo = False
 		self.editing = False
-		self.delegator = mainView['tableview_inst_tune']
+		self.delegator = panelView('tableview_inst_tune')
 		self.currentNumLines = len(self.items)
 		self.waveDir = "default"
 		self.waveType = 'wav'
@@ -1634,12 +1686,12 @@ class Instrument(object):
 
 
 class Chord(object):
-	global curentState,mainView
+	global curentState
 	def __init__(self,items,fb):
 		self.items = items
 		self.chord = currentState['chord']
 		self.fb = fb
-		self.delegator = mainView['tableview_type']
+		self.delegator = panelView('tableview_type')
 		
 		
 		
@@ -1698,7 +1750,7 @@ class Chord(object):
 		if self.fb.showChordScale:
 			self.fb.ChordScaleFrets = calc_chord_scale()
 		self.fb.set_needs_display()
-		
+
 		
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -1824,6 +1876,7 @@ class Root(object):
 		self.items = items
 		self.root = currentState['root']
 		self.fb = fb
+
 		
 	def __getitem__(self,key):
 		try:
@@ -1908,7 +1961,7 @@ class Filters(ui.View):
 		self.fb = fb
 		self.filter_list = []
 		self.items = ccc['FILTER_LIST_CLEAN']
-		self.delegator = mainView['tableview_filters']
+		self.delegator = panelView('tableview_filters')
 		
 		
 		
@@ -2034,7 +2087,7 @@ class Capos(object):
 		self.capos = {}
 		currentState['capos'] = self		
 		self.fb = currentState['fretboard']
-		self.delegator = mainView['tableview_capos']
+		self.delegator = panelView('tableview_capos')
 		
 	def onEdit(self,button):
 		if self.delegator.editing: 
@@ -2105,7 +2158,7 @@ class Capos(object):
 # action for select
 		
 	def tableview_did_select(self,tableView,section,row): #capos
-		global currentState,mainView
+		global currentState
 		fb = currentState['fretboard']
 		self.row = row
 		fret = self.items[row]['fret']
@@ -2120,7 +2173,15 @@ class Capos(object):
 		else:
 			# need to handle the rest via special data entry view
 			numFrets = fretboard.numFrets
-			fretEnter = mainView['view_fretEnter']
+			fretEnter = panelView('view_fretEnter')
+			x,y,w,h = fretEnter.frame
+			if iPad:
+				x = 400
+				y = 200
+			else:
+				x = 10
+				y = 200
+			fretEnter.frame = (x,y,w,h)
 			minFret = fretEnter.min = 1
 			maxFret = fretEnter.max = numFrets
 			if self.items[row]['title'] == 'Banjo 5th':
@@ -2192,7 +2253,7 @@ class FretEnter(ui.View):
 		row = capos.row
 		
 		if button.name.endswith('Cancel'):
-			mainView['view_fretEnter'].hidden = True
+			panelView('view_fretEnter').hidden = True
 		else: # OK
 			entry = self.textfield.text
 			if not entry.isnumeric():
@@ -2203,7 +2264,7 @@ class FretEnter(ui.View):
 				capos.items[row]['fret'] = value
 				capos.toggleChecked(row)
 				capos.capos[value] = capos.items[row]['mask']
-				mainView['view_fretEnter'].hidden = True
+				panelView('view_fretEnter').hidden = True
 				tvCapos.reload_data()
 				instrument.updateScaleChord()
 				fretboard.set_needs_display()
@@ -2343,6 +2404,7 @@ def toggle_mode(button):
 	fretboard = currentState['fretboard']
 	tvFind = currentState['tvFind']
 	tvScale = currentState['tvScale']
+	#%%%%%%%%%%%
 	mainView = currentState['mainView']
 	try:
 		capos.reset()
@@ -2353,16 +2415,16 @@ def toggle_mode(button):
 	mode = button.title
 	hideshow = {}
 	hideshow = {'I':  {'hide':
-	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span sp_scale'.split(),
+	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span sp_scale tri_chord_label'.split(),
 											'show':
 														('tableview_find', 'button_find', 'button_chord', 'button_arp')
 										},						
  							'C':	{'hide':
 										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat sp_scale'.split(),
-										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span'.split()
+										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span tri_chord_label'.split()
 										},
 							'S': 	{'hide': 
-										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span'.split(),
+										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span tri_chord_label'.split(),
 											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat sp_scale'.split()
 										}
 								}
@@ -2370,32 +2432,33 @@ def toggle_mode(button):
 	fretboard.cc_mode = mode
 	
 	for thisButton in "button_scale button_ident button_calc".split():
-		mainView[thisButton].background_color = 'white'
+		panelView(thisButton).background_color = 'white'
 
 	button.background_color =  '#FFCC66'
 	
 	currentState['mode'] = mode
 	mode_hs = hideshow[mode]
 	for view in mode_hs['hide']:		
-		mainView[view].hidden = True
+		panelView(view).hidden = True
 	for view in mode_hs['show']:			
 		try:
-			mainView[view].hidden = False
+			panelView(view).hidden = False
 		except:
 			console.hud_alert('in toggle_mode, view {} does not exist'.format(view))
 	
 	if mode == 'C': # special stuff for identify
-		mainView['button_edit_chord'].title = 'type'
+		panelView('button_edit_chord').title = 'type'
 	elif mode == 'S':
-		mainView['button_edit_chord'].title = 'mode'
+		panelView('button_edit_chord').title = 'mode'
 	else: # 'I'
-		mainView['button_edit_chord'].title = ''		
+		panelView('button_edit_chord').title = ''		
 		tvFind.data_source.items = []
 		tvFind.reload_data()
 		fretboard.findScaleNotes = []
 		find.row = -1
 		fretboard.touched = {}
 	fretboard.set_needs_display()
+	#this needs thinkinh %%%%%%
 	mainView.set_needs_display()
 	
 	
@@ -2526,7 +2589,6 @@ def applyState(state):
 	
 
 class SettingListDelegate(object):
-	global mainView
 	def __init__(self):
 		if not os.path.exists(SettingsFileName):
 			console.hud_alert('Creating base settings file','error')
@@ -2544,7 +2606,7 @@ class SettingListDelegate(object):
 			fh.close()
 		
 		self.currentNumLines = len(self.items)	
-		self.delegator = mainView['view_settingsView']['tv_SettingsList']
+		self.delegator = panelView('view_settingsView')['tv_SettingsList']
 			
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -2624,11 +2686,15 @@ class SettingListDelegate(object):
 		capos.delegator.reload_data()
 		instrument.updateScaleChord()
 		fretboard.set_needs_display()
-		mainView['view_settingsView'].hidden = True
-		mainViewShield.reveal()	
+		panelView('view_settingsView').hidden = True
+		#%%%%%%%
+		if ipad:
+			mainViewShield.reveal()	
+		else:
+			shields['rightPanel'].reveal()
 
 class SettingsView(ui.View):
-	global settings,mainView
+	global settings
 	def did_load(self):
 		for subview in self.subviews:
 			if subview.name.endswith('OK'):
@@ -2650,7 +2716,13 @@ class SettingsView(ui.View):
 				
 				
 	def onSettingsSave(self,button):
-		mainViewShield.conceal()
+		x,y,w,h = self.frame
+		if iPad:
+			self.frame = (300,300,w,h)
+			mainViewShield.conceal()
+		else:
+			self.frame = (30,300,w,h)
+			shields['rightPanel'].conceal()
 		self.hidden = False
 		self.textField.enabled = True
 		self.btnOK.enabled = True
@@ -2660,7 +2732,14 @@ class SettingsView(ui.View):
 		
 	def onSettingsLoad(self,button):
 		global settings
-		mainViewShield.conceal()
+		#%%%%%%%%
+		x,y,w,h = self.frame
+		if iPad:
+			self.frame = (300,300,w,h)
+			mainViewShield.conceal()
+		else:
+			self.frame = (30,300,w,h)
+			shields['rightPanel'].conceal()
 		self.hidden = False
 		self.textField.enabled = False
 		self.btnOK.enabled = False
@@ -2692,7 +2771,11 @@ class SettingsView(ui.View):
 		json.dump(settings.items,fh)
 		fh.close()
 		settings.delegator.reload_data()
-		mainViewShield.reveal()
+		#%%%%%%%%%%
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		self.hidden = True
 	
 		
@@ -2711,12 +2794,19 @@ class SettingsView(ui.View):
 		fh = open(SettingsFileName,'wb')
 		json.dump(settings.items,fh)
 		fh.close()
-		mainViewShield.reveal()
+		#%%%%%%%%%%%%
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		self.hidden = True
 		pass
 		
 	def onCancel(self,button):
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		self.tvSettingsList.editing = False
 		self.hidden = True
 		
@@ -2835,7 +2925,20 @@ class InstrumentEditor(ui.View):
 			console.hud_alert('Please select an instrument as the base for new one','error',2)
 			return
 			
-		mainViewShield.conceal()
+		if iPad:
+			mainViewShield.conceal()
+		else:
+			shields['rightPanel'].conceal()
+			self.frame=(10,100,350,400)
+			self['label1'].frame = (72,10,218,32)
+			self['btn_tuning'].frame = (57,160,236,32)
+			self['txt_title'].frame = (5,300,340,32)
+			self['label2'].frame = (10,250,80,30)
+			self['label3'].frame = (175,250,80,30)
+			self['txt_octave'].frame = (260,250,80,32)
+			self['button_IE_OK'].frame = (30,360,80,32)
+			self['button_IE_Cancel'].frame = (240,360,80,32)
+			
 		numStrings = len(notes)
 		self.span = thisInstrument['span']
 		self.row = thisInstrument['row']
@@ -2875,7 +2978,12 @@ class InstrumentEditor(ui.View):
 		                         spinnerSize = (spinnerWidth,32),
 		                         fontSize = 16
 		                         )
-		self.SpanSpinner.position = (240,185)
+		if iPad :
+			self.SpanSpinner.position = (240,85)		
+		else:
+			self.SpanSpinner.position = (100,250)
+		
+			
 		self.add_subview(self.SpanSpinner)
 		self.tuningButton.action = self.playTuning
 		self.update_tuning_label()
@@ -2900,11 +3008,11 @@ class InstrumentEditor(ui.View):
 		entry['span'] = int(self.SpanSpinner.value)
 		entry['accessory_type'] = 'none'
 		
-		mainView['tableview_inst_tune'].delegate.items.insert(0,entry)
-		for i in range(len(mainView['tableview_inst_tune'].delegate.items)):
-			mainView['tableview_inst_tune'].delegate.items[i]['accessory_type'] = 'none'
-		mainView['tableview_inst_tune'].delegate.tuning = {}
-		mainView['tableview_inst_tune'].reload_data()
+		panelView('tableview_inst_tune').delegate.items.insert(0,entry)
+		for i in range(len(panelView('tableview_inst_tune').delegate.items)):
+			panelView('tableview_inst_tune').delegate.items[i]['accessory_type'] = 'none'
+		panelView('tableview_inst_tune').delegate.tuning = {}
+		panelView('tableview_inst_tune').reload_data()
 		self.hidden = True
 		for subview in self.spinnerArray:
 			self.remove_subview(subview)
@@ -2912,7 +3020,10 @@ class InstrumentEditor(ui.View):
 			self.remove_subview(subview)
 		self.spinnerArray = []
 		self.octaveTextArray = []
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		
 		
 	def onCancel(self,sender):
@@ -2923,7 +3034,10 @@ class InstrumentEditor(ui.View):
 			self.remove_subview(subview)
 		self.spinnerArray = []
 		self.octaveTextArray = []
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 
 		
 	def update_tuning_label(self):
@@ -3016,7 +3130,10 @@ class ConfigView(ui.View):
 		self.hidden = True
 		
 	def onCancel(self,button):
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		self.hidden = True
 		
 	def onSave(self,button):		
@@ -3055,7 +3172,10 @@ class ConfigView(ui.View):
 		fh = open(ConfigFileName, 'wb')
 		json.dump(cccOut,fh)
 		fh.close()
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			rightPanel['shield'].reveal()
 		self.hidden = True
 		
 	def onRestore(self,button):
@@ -3075,17 +3195,25 @@ class ConfigView(ui.View):
 		
 		filters.items = ccc['FILTER_LIST_CLEAN']
 		filters.delegator.reload_data()
-		toggle_mode(mainView['button_calc'])
+		toggle_mode(panelView('button_calc'))
 		fh = open(ConfigFileName,'wb')
 		json.dump(ccc,fh)
 		fh.close()
-		mainViewShield.reveal()
+		if iPad:
+			mainViewShield.reveal()
+		else:
+			shields['rightPanel'].reveal()
 		self.hidden = True
 		
 def onSaveConfig(button):
-	mainViewShield.conceal()
-	mainView['view_config'].hidden = False
-	mainView['view_config'].bring_to_front()
+	if iPad:
+		mainViewShield.conceal()
+	else:
+		shields['rightPanel'].conceal()
+	if not iPad:
+		panelView('view_config').frame = (10,20,223,171)
+	panelView('view_config').hidden = False
+	panelView('view_config').bring_to_front()
 
 
 def restoreConfig():
@@ -3095,12 +3223,33 @@ def restoreConfig():
 		createConfig()
 	fh = open(ConfigFileName,'rb')
 	ccc = json.load(fh)
+	
+	
+def panelView(subviewName):
+	global subviewHost,mainView
+	''' return the subview form apprpriate host'''
+	if iPad:
+		return mainView[subviewName]
+	else:
+		if subviewName in subviewHost.keys():
+			return subviewHost[subviewName][subviewName]
+		else:
+			return None
+
+def shiftScreen(button):
+	global scrollRoot
+	buttonName = button.name
+	if buttonName.startswith('left') or buttonName.startswith('right'): #left move to center
+		x = screenWidth
+	elif buttonName.endswith('right'): # center move to right
+		x = 2*screenWidth
+	else:
+		x = 0	
+	scrollRoot.content_offset = (x,0)
 			
 ##############################################
 ##############################################
 if __name__ == "__main__":	
-	
-	
 	
 	if not os.path.exists('waves'):
 		console.alert('waves sound files not present, run makeWave.py')
@@ -3119,38 +3268,114 @@ if __name__ == "__main__":
 	else:
 		restoreConfig()
 		
-	
 	screenSize = ui.get_screen_size()
-	screenSize = (375.0, 667.0) # iPhone 6
-	sv = ui.ScrollView()
+	aspect = screenSize[0]/screenSize[1]
+	aspect = aspect if aspect > 1 else 1/aspect
 	
+	if aspect < 1.4:
+		iPad = True
+		screenHeight = min(screenSize)
+		screenWidth = max(screenSize)
+	else:
+		iPad = False
+		screenHeight = max(screenSize)
+		screenWidth = min(screenSize)
 		
+	
+	# force iphone
+	
+	#iPad = False
+	##screenHeight = 667.0
+	#screenWidth = 375.0
+	
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
-	mainViewShield = Shield(mainView)
-	leftView = ui.load_view('ccLeft.pyui')
-	leftViewShield = Shield(leftView)
-	rightView = ui.load_view('ccRight.pyui')
-	rightViewSHield = Shield(rightView)
-	
-	num_chords = mainView['num_chords']
-	chord_num = mainView['chord_num']
-	middle_field = mainView['label_middle']
-	fretboard = mainView['fretboard']
-	tvRoot = leftView['tableview_root']
+
+	if iPad:
+		mainViewShield = Shield(mainView,local=True)
+	else:
+		# this is to force things for testing 
+		subviewHost = {}
+		baseView = ui.View(frame=(0,0,1024,768),background_color = 'gray')
+		scrollRoot = ui.ScrollView(frame = (380,0,screenWidth,screenHeight), #forced position
+		                           content_size=(3*screenWidth,screenHeight), background_color='white')
+		baseView.add_subview(scrollRoot)
+		leftPanel = ui.View(name='leftPanel')
+		centerPanel = ui.View(name='centerPanel')
+		rightPanel = ui.View(name='rightPanel')
+		
+		btnWidth = 10
+		panel_color = [(0.8, 0.8, 0.8), (0.8,0.8,0.7), (0.8,0.8,0.6)]
+		shields = {}
+		for i,panel in enumerate([leftPanel,centerPanel,rightPanel]):
+			scrollRoot.add_subview(panel)
+			panel.frame = (i*screenWidth,0,screenWidth,screenHeight)
+			panel.background_color = panel_color[i]
+			panel.border_width = 1
+			shields[panel.name] = Shield(panel,local=True)
+			shields[panel.name].position = (0,0)	
+			l,t,w,h = panel.frame
+			if panel == leftPanel:
+				b = ui.Button(frame=(screenWidth-btnWidth,0,btnWidth,screenHeight))
+				b.action = shiftScreen
+				b.name='left_to_center'
+				panel.add_subview(b)
+			elif panel == centerPanel:
+				b1 = ui.Button(frame=(0,0,btnWidth,screenHeight))
+				b1.action = shiftScreen
+				b1.name='center_to_left'
+				b2 =ui.Button(frame=(screenWidth-btnWidth,0,btnWidth,screenHeight))
+				b2.action=shiftScreen
+				b2.name='center_to_right'
+				panel.add_subview(b1)
+				panel.add_subview(b2)
+			elif panel == rightPanel:
+				b = ui.Button(frame=(0,0,btnWidth,screenHeight))
+				b.action=shiftScreen
+				b.name='right_to_center'
+				panel.add_subview(b)
+				
+				
+		for subview in mainView.subviews:
+			whichOne,offset = Triptych[subview.name]
+			if whichOne == "L":
+				leftPanel.add_subview(subview)
+				if subview.name != 'shield':
+					subviewHost[subview.name] = leftPanel
+			elif whichOne == 'C':
+				p = subview.frame
+				subview.frame = (p[0]-(screenWidth-40),p[1],p[2],p[3])
+				centerPanel.add_subview(subview)
+				subviewHost[subview.name] = centerPanel
+			elif whichOne == "R":
+				p = subview.frame
+				subview.frame = (p[0]-(2*screenWidth-80),p[1],p[2],p[3])
+				rightPanel.add_subview(subview)
+				subviewHost[subview.name] = rightPanel
+			else:
+				print "no such thing "
+				sys.error(1)
+			if offset: 
+				subview.frame = tuple(map(add,subview.frame,offset))
+			
+	num_chords = panelView('num_chords')
+	chord_num = panelView('chord_num')
+	middle_field = panelView('label_middle')
+	fretboard = panelView('fretboard')
+	tvRoot = panelView('tableview_root')
 	root_list = ccc['ROOT_LIST_CLEAN']
 	root = Root(root_list,fretboard)
 	tvRoot.data_source = tvRoot.delegate = root
 	
-	tvType = leftView['tableview_type']
+	tvType = panelView('tableview_type')
 	chord_list = ccc['CHORD_LIST_CLEAN']
 	chord = Chord(chord_list,fretboard)
 	chord.reset()
 	tvType.data_source = tvType.delegate = chord
-	leftView['button_edit_chord'].action = chord.onEdit
+	panelView('button_edit_chord').action = chord.onEdit
 	
-	tvInst = rightView['tableview_inst_tune']
-	tuningDisplay = rightView['button_tuning']
+	tvInst = panelView('tableview_inst_tune')
+	tuningDisplay = panelView('button_tuning')
 	tuningDisplay.title = ''
 	tuningDisplay.action = play_tuning
 
@@ -3158,12 +3383,12 @@ if __name__ == "__main__":
 	# fretboard is a custom view and is instanciated by the ui.load_view process
 	tuning_list = ccc['TUNING_LIST_CLEAN']
 	instrument = Instrument(tuning_list,fretboard)
-	rightView['button_edit_instrument'].action = instrument.onEdit
+	panelView('button_edit_instrument').action = instrument.onEdit
 	instrument.reset()
 	tvInst.data_source = tvInst.delegate = fretboard.instrument = instrument
 	
 
-	tvFilters = rightView['tableview_filters']
+	tvFilters = panelView('tableview_filters')
 	filter_list = ccc['FILTER_LIST_CLEAN']
 	filters = Filters(fretboard)
 	instrument.tvFilters = tvFilters
@@ -3171,39 +3396,39 @@ if __name__ == "__main__":
 	filters.instrument = instrument
 	tvFilters.data_source = tvFilters.delegate = filters
 	tvFilters.hidden = False
-	rightView['button_edit_filters'].action = filters.onEdit
+	panelView('button_edit_filters').action = filters.onEdit
 
-	tvFind = leftView['tableview_find']
+	tvFind = panelView('tableview_find')
 	find = Find(items=[],delegator=tvFind)
 	tvFind.data_source = find
 	tvFind.delegate = find
 	tvFind.hidden = True
 
-	tvScale = leftView['tableview_scale']
+	tvScale = panelView('tableview_scale')
 	tvScale.data_source.items = []
 	tvScale.hidden = True	
 	scale_list = ccc['SCALE_LIST_CLEAN']
 	scale = Scale(scale_list,fretboard)
 	tvScale.data_source = tvScale.delegate = scale
 		
-	mainView['button_arp'].action = play
-	mainView['button_chord'].action = play
-	mainView['button_ident'].action = toggle_mode
-	mainView['button_calc'].action = toggle_mode
-	mainView['button_scale'].action = toggle_mode
-	mainView['button_scale_notes'].action = set_scale_display
-	mainView['button_scale_tones'].action = set_scale_display
-	mainView['button_find'].action = onFind
-	mainView['button_find'].hidden = True
-	mainView['button_up'].action = mainView['button_down'].action = onPrevNext
-	mainView['button_scale'].action = toggle_mode
-	mainView['button_play_scale'].action = playScale
-	mainView['btn_sharpFlat'].action = fretboard.sharpFlat
-	mainView['btn_sharpFlat'].hidden = True
-	mainView['slider_arp'].action = on_slider_arp
-	mainView['lbl_chord'].hidden = True
-	rightView['lbl_fullchord'].hidden = True
-	rightView['lbl_definition'].hidden = True
+	panelView('button_arp').action = play
+	panelView('button_chord').action = play
+	panelView('button_ident').action = toggle_mode
+	panelView('button_calc').action = toggle_mode
+	panelView('button_scale').action = toggle_mode
+	panelView('button_scale_notes').action = set_scale_display
+	panelView('button_scale_tones').action = set_scale_display
+	panelView('button_find').action = onFind
+	panelView('button_find').hidden = True
+	panelView('button_up').action = panelView('button_down').action = onPrevNext
+	panelView('button_scale').action = toggle_mode
+	panelView('button_play_scale').action = playScale
+	panelView('btn_sharpFlat').action = fretboard.sharpFlat
+	panelView('btn_sharpFlat').hidden = True
+	panelView('slider_arp').action = on_slider_arp
+	panelView('lbl_chord').hidden = True
+	panelView('lbl_fullchord').hidden = True
+	panelView('lbl_definition').hidden = True
 
 	
 	currentState['tvFind'] = tvFind
@@ -3211,49 +3436,72 @@ if __name__ == "__main__":
 	currentState['fretboard'] = fretboard
 	currentState['mainView'] = mainView
 	
-	tvCapos = rightView['tableview_capos']
+	tvCapos = panelView('tableview_capos')
 	capo_list = ccc['CAPOS']
 	capos = Capos(capo_list)
-	rightView['button_edit_capos'].action = capos.onEdit
+	panelView('button_edit_capos').action = capos.onEdit
 	tvCapos.data_source = tvCapos.delegate = capos
 	
-	spanSpinner = Spinner(spinnerSize=(100,50),
+	spanSpinner = Spinner(spinnerSize=(80,50),
 	                      
 	                      name='sp_span',
 	                      fontSize = 18,
 	                      initialValue=ccc['SPAN_DEFAULT_UNKNOWN'],
 	                      limits=(2,ccc['SPAN_DEFAULT_UNKNOWN']+2),
 	                      action=onSpanSpinner)
-	mainView.add_subview(spanSpinner)
-	spanSpinner.position =(580,443)
 	
-	scaleSpinner = Spinner(spinnerSize=(120,40),
+	if iPad:
+		mainView.add_subview(spanSpinner)
+		spanSpinner.position =(580,443)
+	else:
+		centerPanel.add_subview(spanSpinner)	
+		subviewHost['sp_span'] = centerPanel
+		spanSpinner.position = (270,443)
+	
+	
+	scaleSpinner = Spinner(spinnerSize=(100,40),
 	                       name='sp_scale',
 	                       fontSize = 12,
 	                       initialValue=['normal','down','open','FourOnString'],
 	                       action=onScaleSpinner)
-	mainView.add_subview(scaleSpinner)
-	scaleSpinner.position = (570,300)
+	                       
+		
+	if iPad:
+		mainView.add_subview(scaleSpinner)
+		scaleSpinner.position = (570,300)
+	else:
+		centerPanel.add_subview(scaleSpinner)
+		subviewHost['sp_scale'] = centerPanel
+		scaleSpinner.position = (270,300)
+
+	
 	scaleSpinner.hidden = True
 	
-	#rightView['view_fretEnter'].hidden = True
-	mainView['sp_span'].hidden = True
-	currentState['span'] = mainView['sp_span']
-	rightView['button_save_config'].action = onSaveConfig
+	panelView('view_fretEnter').hidden = True
+	panelView('sp_span').hidden = True
+	currentState['span'] = panelView('sp_span')
+	panelView('button_save_config').action = onSaveConfig
 	
-	#rightView['view_settingsView'].hidden = True
+	panelView('view_settingsView').hidden = True
 	settings = SettingListDelegate()
-	#rightView['view_settingsView']['tv_SettingsList'].data_source = settings
-	#rightView['view_settingsView']['tv_SettingsList'].delegate = settings
-	rightView['button_save'].action = mainView['view_settingsView'].onSettingsSave
-	rightView['button_load'].action = mainView['view_settingsView'].onSettingsLoad
+	panelView('view_settingsView')['tv_SettingsList'].data_source = settings
+	panelView('view_settingsView')['tv_SettingsList'].delegate = settings
+	panelView('button_save').action = panelView('view_settingsView').onSettingsSave
+	panelView('button_load').action = panelView('view_settingsView').onSettingsLoad
 	
-	#rightView['view_instrumentEditor'].hidden = True
-	#rightView['button_new_instrument'].action = mainView['view_instrumentEditor'].onNewInstrument	
-
-		
+	panelView('view_instrumentEditor').hidden = True
+	panelView('button_new_instrument').action = panelView('view_instrumentEditor').onNewInstrument	
+	if iPad:
+		panelView('tri_chord_label').frame = (-200,-200,0,0) # since it wont' hide, i send it to hell!!!!'
+	
+	
+	#windowView = ui.View(frame=(0,0,screenWidth,screenHeight))
+	#windowView.add_subview(scrollRoot)
 	fretboard.set_chordnum(chord_num,num_chords)
 	sound.set_volume(0.5)	
-	toggle_mode(mainView['button_calc'])
-	mainView.present(style='full_screen',orientations=('landscape',))
-
+	toggle_mode(panelView('button_calc'))
+# need to choose what to display here.
+	if iPad:
+		mainView.present(style='full_screen',orientations=('landscape',))
+	else:
+		baseView.present(style='full_screen',orientations=('landscape',))
