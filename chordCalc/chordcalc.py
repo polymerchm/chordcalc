@@ -3282,11 +3282,11 @@ if __name__ == "__main__":
 		screenWidth = min(screenSize)
 		
 	
-	# force iphone
+	#force iphone
 	
-	#iPad = False
-	##screenHeight = 667.0
-	#screenWidth = 375.0
+	iPad = False
+	screenHeight = 667.0
+	screenWidth = 375.0
 	
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
@@ -3297,8 +3297,10 @@ if __name__ == "__main__":
 		# this is to force things for testing 
 		subviewHost = {}
 		baseView = ui.View(frame=(0,0,1024,768),background_color = 'gray')
-		scrollRoot = ui.ScrollView(frame = (380,0,screenWidth,screenHeight), #forced position
-		                           content_size=(3*screenWidth,screenHeight), background_color='white')
+		scrollRoot = ui.ScrollView(frame = (380,0,screenWidth,screenHeight)) #forced position
+		scrollRoot.content_size=(3*screenWidth+5,screenHeight)
+		scrollRoot.background_color='white'
+		scrollRoot.paging_enabled = True
 		baseView.add_subview(scrollRoot)
 		leftPanel = ui.View(name='leftPanel')
 		centerPanel = ui.View(name='centerPanel')
