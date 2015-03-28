@@ -71,11 +71,11 @@ ConfigFileName = 'config.ini'
 
     
 Triptych = {    # Panel, adjustment in position and size
-    "tableview_scale":				("L",(40,0,30,-50)),
+    "tableview_scale":				("L",(70,0,30,-100)),
     "tableview_find":					("L",None),
-    "tableview_root":					("L",(0,0,+30,-50)),
-    "tableview_type":					("L",(40,5,30,-50)),
-    "label1":									("L",None), 
+    "tableview_root":					("L",(40,0,+20,-100)),
+    "tableview_type":					("L",(60,5,30,-100)),
+    "label1":									("L",(60,0,0,0)), 
     "tri_chord_label":				("C",None),
     "button_down":						("C",(30,10,0,0)),
     "button_up":							("C",(30,10,0,0)),
@@ -84,20 +84,20 @@ Triptych = {    # Panel, adjustment in position and size
     "arpeggio":								("C",(30,0,0,0)),
     "button_chord":						("C",(30,0,0,0)),
     "button_arp":							("C",(30,0,0,0)),
-    "fretboard":							("C",(70,-20,-50,0)),
+    "fretboard":							("C",(80,-20,-50,-60)),
     "chord_num":							("C",(30,0,0,0)), 
-    "label_middle":						("C",(30,0,0,0)), 
-    "num_chords":							("C",(30,0,0,0)), 
+    "label_middle":						("C",(30,-10,0,0)), 
+    "num_chords":							("C",(30,-20,0,0)), 
     "tableview_filters":			("R",(30,0,0,-40)), 
     "button_tuning":					("R",None), 
-    "button_scale":						("C",(30,0,0,0)),
+    "button_scale":						("C",(30,-20,0,0)),
     "button_find":						("C",(30,0,0,0)), 
-    "button_ident":						("C",(25,0,0,0)), 
-    "button_calc":						("C",(20,0,0,0)), 
+    "button_ident":						("C",(25,-20,0,0)), 
+    "button_calc":						("C",(20,-20,0,0)), 
     "button_scale_notes":			("C",(25,0,0,0)), 
     "button_scale_tones":			("C",(25,0,0,0)), 
     "button_play_scale":			("C",(25,0,0,0)),
-    "slider_volume":					("C",(35,0,0,0)), 
+    "slider_volume":					("C",(35,-20,0,0)), 
     "slider_arp":							("C",(35,0,0,0)),
     "lbl_chord":							("R",None), 
     "lbl_fullchord":					("R",None), 
@@ -105,15 +105,15 @@ Triptych = {    # Panel, adjustment in position and size
     "btn_sharpFlat":					("C",(25,0,0,0)), 
     "tableview_capos":				("R",(32,-30,0,-30)), 
     "view_fretEnter":					("R",None), 
-    "lbl_span":								("C",(30,0,0,0)), 
-    "label6":									("C",(30,0,0,0)), 
+    "lbl_span":								("C",(30,-30,0,0)), 
+    "label6":									("C",(30,-30,0,0)), 
     "label7":									("C",(30,0,0,0)), 
     "button_save":						("R",None), 		
     "button_load":						("R",None), 
     "button_edit_instrument":	("R",(10,0,0,0)),
     "button_edit_filters":		("R",(10,0,0,0)),
     "button_edit_capos":			("R",(10,-20,0,0)),
-    "button_edit_chord":			("L",None),
+    "button_edit_chord":			("L",(50,0,0,0)),
     "button_save_config":			("R",None), 
     "button_new_instrument":	("R",None), 
     "view_settingsView":			("R",None), 
@@ -1490,7 +1490,7 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 				try:
 					increment = int(fraction*10)
 				except TypeError:
-					return
+					return 
 				self.currentPosition += increment
 				self.currentPosition = max(0,self.currentPosition)
 				self.currentPosition = min(len(self.ChordPositions)-1,self.currentPosition)					
@@ -3504,4 +3504,4 @@ if __name__ == "__main__":
 	if iPad:
 		mainView.present(style='full_screen',orientations=('landscape',))
 	else:
-		baseView.present(style='full_screen',orientations=('landscape',))
+		scrollRoot.present(style='full_screen',orientations=('portrait',))

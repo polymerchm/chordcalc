@@ -9,7 +9,8 @@ from shutil import copyfileobj
 import bs4, requests
 
 
-enharmo = {"Ab":"Gs",
+enharmo
+ = {"Ab":"Gs",
            "Bb":"As",
            "Db":"Cs",
            "Eb":"Ds",
