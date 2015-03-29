@@ -68,7 +68,7 @@ import Shield; 			reload(Shield); 			from Shield import Shield
 SettingsFileName = 'settings.ini'
 ConfigFileName = 'config.ini'
 
-
+debugOnIpad = True
     
 Triptych = {    # Panel, adjustment in position and size
     "tableview_scale":				("L",(70,0,30,-100)),
@@ -79,7 +79,7 @@ Triptych = {    # Panel, adjustment in position and size
     "tri_chord_label":				("C",None),
     "button_down":						("C",(30,10,0,0)),
     "button_up":							("C",(30,10,0,0)),
-    "tableview_inst_tune":		("R",(30,0,0,-40)), 
+    "tableview_inst_tune":		("R",(30,0,0,-50)), 
     "label2":									("R",None),
     "arpeggio":								("C",(30,0,0,0)),
     "button_chord":						("C",(30,0,0,0)),
@@ -88,7 +88,7 @@ Triptych = {    # Panel, adjustment in position and size
     "chord_num":							("C",(30,0,0,0)), 
     "label_middle":						("C",(30,-10,0,0)), 
     "num_chords":							("C",(30,-20,0,0)), 
-    "tableview_filters":			("R",(30,0,0,-40)), 
+    "tableview_filters":			("R",(30,-10,0,-50)), 
     "button_tuning":					("R",None), 
     "button_scale":						("C",(30,-20,0,0)),
     "button_find":						("C",(30,0,0,0)), 
@@ -103,16 +103,16 @@ Triptych = {    # Panel, adjustment in position and size
     "lbl_fullchord":					("R",None), 
     "lbl_definition":					("R",None), 
     "btn_sharpFlat":					("C",(25,0,0,0)), 
-    "tableview_capos":				("R",(32,-30,0,-30)), 
+    "tableview_capos":				("R",(32,-30,0,-50)), 
     "view_fretEnter":					("R",None), 
     "lbl_span":								("C",(30,-30,0,0)), 
     "label6":									("C",(30,-30,0,0)), 
     "label7":									("C",(30,0,0,0)), 
     "button_save":						("R",None), 		
     "button_load":						("R",None), 
-    "button_edit_instrument":	("R",(10,0,0,0)),
-    "button_edit_filters":		("R",(10,0,0,0)),
-    "button_edit_capos":			("R",(10,-20,0,0)),
+    "button_edit_instrument":	("R",(10,-20,0,0)),
+    "button_edit_filters":		("R",(10,-30,0,0)),
+    "button_edit_capos":			("R",(10,-50,0,0)),
     "button_edit_chord":			("L",(50,0,0,0)),
     "button_save_config":			("R",None), 
     "button_new_instrument":	("R",None), 
@@ -875,8 +875,9 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		self.nutOffset = 20	
 		self.numFrets = 14
 		self.offsetFactor = 0.1		
-		self.markerRadius = 10
-		self.fingerRadius = 15
+		self.markerRadius = 10 if iPad else 9
+		self.fingerRadius = 15 if iPad else 13
+		
 		self.image = ''
 		self.instrument = currentState['instrument']
 		self.chord = currentState['chord']
@@ -957,7 +958,10 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		
 	def stringSpacing(self):
 		global currentState
-		numStrings = len(currentState['instrument']['notes'])
+		if currentState['instrument']['notes']:
+			numStrings = len(currentState['instrument']['notes'])
+		else:
+			return None
 		offset = int(self.offsetFactor*self.width)
 		return (numStrings,offset,int((self.width-2*offset)/float(numStrings-1)))
 		
@@ -977,14 +981,17 @@ class Fretboard(ui.View): # display fingerboard and fingering of current chord/i
 		
 		def drawCapo(fret):
 			width = self.width
-			numStrings,offset,ss = self.stringSpacing()
+			if self.stringSpacing():
+				numStrings,offset,ss = self.stringSpacing()
+			else:
+				return
 			segment = int(width/float(numStrings))
 			capos = currentState['capos'].capos
 			mask = capos[fret]
 			if not instrument.is5StringBanjo: #conventional instrument
 				padHeight = self.fretDistance(self.scale(),fret) - self.fretDistance(self.scale(),fret-1) - 10
 				padY = self.fretDistance(self.scale(),fret-1)	+	5
-				padStartX = self.frame[0]
+				padStartX = 0
 				for i,flag in enumerate(mask):
 					if not flag:
 						padStartX += segment
@@ -2191,6 +2198,7 @@ class Capos(object):
 					minFret = fretEnter.min = fretboard.fret5thStringBanjo + 1
 			fretEnter.label.text = "Enter fret # {}-{}".format(minFret,maxFret)
 			fretEnter.hidden = False
+			fretEnter.bring_to_front()
 				
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -2509,7 +2517,9 @@ def onFind(button):
 		tvFind.data_source.items = chord_list
 		tvFind.data_source.currentNumLines = len(chord_list)
 		tvFind.hidden = False
-		tvFind.reload_data()	
+		tvFind.reload_data()
+		if len(list):
+			scrollRoot.content_offset = (0,0)
 		
 def on_slider(sender):
 	sound.set_volume(sender.value)
@@ -2688,7 +2698,7 @@ class SettingListDelegate(object):
 		fretboard.set_needs_display()
 		panelView('view_settingsView').hidden = True
 		#%%%%%%%
-		if ipad:
+		if iPad:
 			mainViewShield.reveal()	
 		else:
 			shields['rightPanel'].reveal()
@@ -2751,7 +2761,6 @@ class SettingsView(ui.View):
 		
 	def onOK(self,button):
 		global settings
-		console.hud_alert('doing the on button')
 		if self.textField.text in [x['title'] for x in settings.items]:
 			console.hud_alert('Title already in use','error')
 			return
@@ -2899,6 +2908,7 @@ class Find(object):
 			fretboard.findScaleNotes = calc_chord_scale(key=self.key, chord=self.fingering)
 		self.delegator.reload_data()
 		fretboard.set_needs_display()
+		scrollRoot.content_offset = (screenWidth,0)
 					
 class InstrumentEditor(ui.View):
 	def did_load(self):
@@ -3284,9 +3294,10 @@ if __name__ == "__main__":
 	
 	#force iphone
 	
-	iPad = False
-	screenHeight = 667.0
-	screenWidth = 375.0
+	if debugOnIpad:
+		iPad = False
+		screenHeight = 667.0
+		screenWidth = 375.0
 	
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
@@ -3506,4 +3517,7 @@ if __name__ == "__main__":
 	if iPad:
 		mainView.present(style='full_screen',orientations=('landscape',))
 	else:
-		scrollRoot.present(style='full_screen',orientations=('portrait',))
+		if debugOnIpad:
+			baseView.present(style='full_screen',orientations=('landscape',))
+		else:
+			scrollRoot.present(style='full_screen',orientations=('portrait',))
