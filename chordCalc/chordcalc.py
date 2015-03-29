@@ -3308,7 +3308,7 @@ if __name__ == "__main__":
 		subviewHost = {}
 		baseView = ui.View(frame=(0,0,1024,768),background_color = 'gray')
 		scrollRoot = ui.ScrollView(frame = (380,0,screenWidth,screenHeight)) #forced position
-		scrollRoot.content_size=(3*screenWidth+5,screenHeight)
+		scrollRoot.content_size=(3*screenWidth+5,screenHeight-100)
 		scrollRoot.background_color='white'
 		scrollRoot.paging_enabled = True
 		baseView.add_subview(scrollRoot)
