@@ -68,7 +68,7 @@ import Shield; 			reload(Shield); 			from Shield import Shield
 SettingsFileName = 'settings.ini'
 ConfigFileName = 'config.ini'
 
-debugOnIpad = True
+debugOnIpad = False
     
 Triptych = {    # Panel, adjustment in position and size
     "tableview_scale":				("L",(70,0,30,-100)),

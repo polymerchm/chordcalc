@@ -27,7 +27,7 @@ downloads realistic sounds from github
 
 The new features in 5.0 are:
 
-- iPhone 6 compatible
+- iPhone 6 compatible (to emulatate the iPhone on an iPad, set the variable debugOnIpad to True)
 
 Features in Version 5.0
 	
