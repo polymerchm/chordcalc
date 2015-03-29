@@ -29,7 +29,11 @@ The new features in 5.0 are:
 
 - iPhone 6 compatible (to emulatate the iPhone on an iPad, set the variable debugOnIpad to True)
 
-Features in Version 5.0
+- entering fret for capo now uses spinner (no keyboard needed)
+
+- minor tweeks to supress vertical scrolling on iphone (however, this impacts swiping down gestures on fretboard: see below)
+
+Features in Version 4.0
 	
 - constants can now be reloaded. No longer "globals"
 
