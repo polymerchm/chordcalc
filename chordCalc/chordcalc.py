@@ -2189,14 +2189,14 @@ class Capos(object):
 				x = 10
 				y = 200
 			fretEnter.frame = (x,y,w,h)
-			minFret = fretEnter.min = 1
-			maxFret = fretEnter.max = numFrets
+			minFret = 1
 			if self.items[row]['title'] == 'Banjo 5th':
 				if instrument_type()[0] != 'banjo':
 					return None
 				else:
-					minFret = fretEnter.min = fretboard.fret5thStringBanjo + 1
-			fretEnter.label.text = "Enter fret # {}-{}".format(minFret,maxFret)
+					minFret = fretboard.fret5thStringBanjo + 1
+			fretEnter.label.text = "Enter fret # {}-{}".format(minFret,numFrets)
+			fretEnter.setRange(minFret,numFrets)
 			fretEnter.hidden = False
 			fretEnter.bring_to_front()
 				
@@ -2237,12 +2237,7 @@ class Capos(object):
 		
 class FretEnter(ui.View):
 	''' implement routines for fret entry'''
-	def did_load(self):
-		self.row = 0
-		self.entry = 0
-		self.min = 0
-		self.max = 0
-		
+	def did_load(self):		
 		for subview in self.subviews:
 			name = subview.name
 			if name.startswith('btn'):
@@ -2252,7 +2247,17 @@ class FretEnter(ui.View):
 			elif name.startswith('lab'):
 				self.label = subview
 				
-			
+			self.spinner = Spinner(name='sp_Fret',											
+			                       initialValue= 2,
+											increment=1,
+											limits=(1,22),
+											action=None, # done if action was successful
+											limitAction=None, #done if hit a limit
+											textFraction = 0.75,
+											fontSize = 18,
+											spinnerSize=(80,80))
+			self.add_subview(self.spinner)
+			self.spinner.position = (90,90)
 			
 	def onButton(self,button): #business end of fretEnter
 		global currentState
@@ -2263,24 +2268,18 @@ class FretEnter(ui.View):
 		if button.name.endswith('Cancel'):
 			panelView('view_fretEnter').hidden = True
 		else: # OK
-			entry = self.textfield.text
-			if not entry.isnumeric():
-				console.hud_alert('invalid entry','error')
-				return None
-			value = int(entry)
-			if self.min <= value <= self.max: #valid
-				capos.items[row]['fret'] = value
-				capos.toggleChecked(row)
-				capos.capos[value] = capos.items[row]['mask']
-				panelView('view_fretEnter').hidden = True
-				tvCapos.reload_data()
-				instrument.updateScaleChord()
-				fretboard.set_needs_display()
-			else:
-				console.hud_alert('fret outside allowed range','error')
-				self.textfield.text = '0'
-				
-						
+			value = self.spinner.value
+			capos.items[row]['fret'] = value
+			capos.toggleChecked(row)
+			capos.capos[value] = capos.items[row]['mask']
+			panelView('view_fretEnter').hidden = True
+			tvCapos.reload_data()
+			instrument.updateScaleChord()
+			fretboard.set_needs_display()
+	
+	def setRange(self,min,max):
+		self.spinner.limits = (min,max)			
+								
 			
 
 #
