@@ -71,10 +71,10 @@ ConfigFileName = 'config.ini'
 debugOnIpad = False
     
 Triptych = {    # Panel, adjustment in position and size
-    "tableview_scale":				("L",(70,0,30,-100)),
-    "tableview_find":					("L",None),
-    "tableview_root":					("L",(40,0,+20,-100)),
-    "tableview_type":					("L",(60,5,30,-100)),
+    "tableview_scale":				("L",(70,0,30,-120)),
+    "tableview_find":					("L",(0,0,0,-150)),
+    "tableview_root":					("L",(40,0,+20,-120)),
+    "tableview_type":					("L",(60,5,30,-120)),
     "label1":									("L",(60,0,0,0)), 
     "tri_chord_label":				("C",None),
     "button_down":						("C",(30,10,0,0)),
@@ -88,7 +88,7 @@ Triptych = {    # Panel, adjustment in position and size
     "chord_num":							("C",(30,0,0,0)), 
     "label_middle":						("C",(30,-10,0,0)), 
     "num_chords":							("C",(30,-20,0,0)), 
-    "tableview_filters":			("R",(30,-10,0,-50)), 
+    "tableview_filters":			("R",(30,-35,0,-50)), 
     "button_tuning":					("R",None), 
     "button_scale":						("C",(30,-20,0,0)),
     "button_find":						("C",(30,0,0,0)), 
@@ -103,7 +103,7 @@ Triptych = {    # Panel, adjustment in position and size
     "lbl_fullchord":					("R",None), 
     "lbl_definition":					("R",None), 
     "btn_sharpFlat":					("C",(25,0,0,0)), 
-    "tableview_capos":				("R",(32,-30,0,-50)), 
+    "tableview_capos":				("R",(32,-80,0,-40)), 
     "view_fretEnter":					("R",None), 
     "lbl_span":								("C",(30,-30,0,0)), 
     "label6":									("C",(30,-30,0,0)), 
@@ -111,8 +111,8 @@ Triptych = {    # Panel, adjustment in position and size
     "button_save":						("R",None), 		
     "button_load":						("R",None), 
     "button_edit_instrument":	("R",(10,-20,0,0)),
-    "button_edit_filters":		("R",(10,-30,0,0)),
-    "button_edit_capos":			("R",(10,-50,0,0)),
+    "button_edit_filters":		("R",(10,-35,0,-50)),
+    "button_edit_capos":			("R",(10,-80,0,0)),
     "button_edit_chord":			("L",(50,0,0,0)),
     "button_save_config":			("R",None), 
     "button_new_instrument":	("R",None), 
@@ -2730,7 +2730,7 @@ class SettingsView(ui.View):
 			self.frame = (300,300,w,h)
 			mainViewShield.conceal()
 		else:
-			self.frame = (30,300,w,h)
+			self.frame = (30,30,w,h)
 			shields['rightPanel'].conceal()
 		self.hidden = False
 		self.textField.enabled = True
@@ -2747,7 +2747,7 @@ class SettingsView(ui.View):
 			self.frame = (300,300,w,h)
 			mainViewShield.conceal()
 		else:
-			self.frame = (30,300,w,h)
+			self.frame = (30,30,w,h)
 			shields['rightPanel'].conceal()
 		self.hidden = False
 		self.textField.enabled = False
@@ -3311,6 +3311,7 @@ if __name__ == "__main__":
 		scrollRoot.content_size=(3*screenWidth+5,screenHeight-100)
 		scrollRoot.background_color='white'
 		scrollRoot.paging_enabled = True
+		scrollRoot.shows_horizontal_scroll_indicator = False 
 		baseView.add_subview(scrollRoot)
 		leftPanel = ui.View(name='leftPanel')
 		centerPanel = ui.View(name='centerPanel')
@@ -3324,7 +3325,8 @@ if __name__ == "__main__":
 			panel.frame = (i*screenWidth,0,screenWidth,screenHeight)
 			panel.background_color = panel_color[i]
 			panel.border_width = 1
-			shields[panel.name] = Shield(panel,local=True)
+			shields[panel.name
+			        ] = Shield(panel,local=True)
 			shields[panel.name].position = (0,0)	
 			l,t,w,h = panel.frame
 			if panel == leftPanel:
