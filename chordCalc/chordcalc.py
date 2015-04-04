@@ -2988,7 +2988,7 @@ class InstrumentEditor(ui.View):
 		                         fontSize = 16
 		                         )
 		if iPad :
-			self.SpanSpinner.position = (240,85)		
+			self.SpanSpinner.position = (240,185)		
 		else:
 			self.SpanSpinner.position = (100,250)
 		
