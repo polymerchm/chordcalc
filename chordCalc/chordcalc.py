@@ -3184,7 +3184,7 @@ class ConfigView(ui.View):
 		if iPad:
 			mainViewShield.reveal()
 		else:
-			rightPanel['shield'].reveal()
+			shields['rightPanel'].reveal()
 		self.hidden = True
 		
 	def onRestore(self,button):
