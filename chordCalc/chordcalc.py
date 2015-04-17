@@ -7,7 +7,7 @@ Copyright (c) 28 Dec 2008, Gek S. Low
 
 Modified to operate under Pythonista iOS ui environment
 Copyright (c) August 19th, 2014 Steven K. Pollack
-Version 5.0
+Version 5.5
 March 3, 2015
 
 Generalized iOS device version
@@ -2923,7 +2923,7 @@ class InstrumentEditor(ui.View):
 		self['label1'].background_color = self['label2'].background_color = self.background_color
 		self['label3'].background_color = self.background_color
 		self.maxOctave = 7
-		self.maxPointer = len(ccc['NOTE_FILE_NAMES']) -1
+		self.maxPointer = 11
 	
 	def onNewInstrument(self,sender):
 		''' allow editing of new instrument based on current instrument'''
@@ -2968,7 +2968,7 @@ class InstrumentEditor(ui.View):
 			               action=self.onSpinner,
 			               limitAction=self.onSpinnerLimit
 			               )
-			temp.pointer = notes[i] % 12
+			temp.pointer = self.notes[i] % 12
 
 			tempOctave = ui.TextField(name='octave{}'.format(i),
 			                          frame=(0,0,40,32),
@@ -3058,11 +3058,12 @@ class InstrumentEditor(ui.View):
 		label = tuningLabel(notes)
 		self.tuningButton.title = label
 		
-	def onSpinner(self,sender):
+	def onSpinner(self,sender,arrow):
 		self.update_tuning_label()
 		
-	def onSpinnerLimit(self,sender):
+	def onSpinnerLimit(self,sender,arrow):
 		string = int(sender.name[-1])
+		direction =  -1 if 'down' in sender.name.lower() else 1
 		pointer = sender.pointer
 		currentOctaves = [int(x.text) for x in self.octaveTextArray]			
 		thisOctave = currentOctaves[string]
@@ -3098,7 +3099,7 @@ class InstrumentEditor(ui.View):
 						thisOctave = int(octaveText.text)
 						octaveText.text = "{}".format(thisOctave-1)
 			self.spinnerArray[string].pointer = 0	
-			self.update_tuning_label()		
+		self.update_tuning_label()		
 		
 	def playTuning(self,button):
 		tones =  [spinner.pointer for spinner in self.spinnerArray]
@@ -3295,8 +3296,8 @@ if __name__ == "__main__":
 	
 	if debugOnIpad:
 		iPad = False
-		screenHeight = 667.0
-		screenWidth = 375.0
+		screenHeight = 578 #667.0
+		screenWidth =  350 # 375.0
 	
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()

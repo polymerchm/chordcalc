@@ -52,7 +52,7 @@ class Spinner(ui.View):
 
 		if self.dataType in (list,tuple):
 			self.list = [x for x in initialValue]
-			self._limits = len(self.list)
+			self._limits = len(self.list)-1
 			self._increment = 1
 			self._pointer = 0
 		self.action = action
@@ -95,8 +95,7 @@ class Spinner(ui.View):
 
 	def updateLabel(self):
 		if self.dataType in [list,tuple]:
-			if 0 <= self._pointer + self._increment <= self._limits - 1 :
-				self.label.text = str(self._value)
+			self.label.text = str(self._value)
 		else: # a scalar
 			if self._limits[0] <= self._value + self._increment <= self._limits[1]:
 				self.label.text = str(self._value)
@@ -148,22 +147,23 @@ class Spinner(ui.View):
 
 	def onArrow(self,sender):
 		# you might want to consider tap-and-hold functionality
-		increment = self.increment * (-1 if 'down' in sender.name.lower() else 1)
+		direction = -1 if 'down' in sender.name.lower() else 1
+		increment = self.increment * direction
 		if self.dataType in [list,tuple]:
-			if 0 <= self._pointer + increment <= self._limits -1 :
+			if 0 <= self._pointer + increment <= self._limits:
 				self._pointer += increment
 				self._value = self.list[self._pointer]
 				self.label.text = str(self._value)
-				if self.action: self.action(self)
+				if self.action: self.action(self,increment)
 			else:
-				if self.limitAction: self.limitAction(self)
+				if self.limitAction: self.limitAction(self,sender)
 		else: # a scalar
 			if self._limits[0] <= self._value + increment <= self._limits[1]:
 				self._value += increment
 				self.label.text = str(self._value)
-				if self.action: self.action(self)
+				if self.action: self.action(self,sender)
 			else:
-				if self.limitAction: self.limitAction(self)
+				if self.limitAction: self.limitAction(self,sender)
 
 	def reset(self):
 		self._value = self.initialValue
@@ -171,16 +171,17 @@ class Spinner(ui.View):
 
 if __name__ == '__main__':
 
-	def spinnerPrint(spinner):
+	def spinnerPrint(spinner,arrow):
 		print spinner.value
+		print arrow.name
 		
-	def hitLimit(spinner):
+	def hitLimit(spinner,arrow):
 		import console
-		console.hud_alert('stop!!!')
+		console.hud_alert('stop!!! {}'.format(arrow.name) )
 
 	view = ui.View(background_color = 'white')
 	spinner1 = Spinner(name='Spinner1',
-	                   initialValue = "this is a test".split(),spinnerSize=(60,30),textFraction=0.50,fontSize=16)
+	                   initialValue = "this is a test".split(),spinnerSize=(60,50),textFraction=0.50,fontSize=16,limitAction=hitLimit)
 	spinner2 = Spinner(name='Spinner2',initialValue = 0, increment = 2, 
 	                   limits = (-10,10),action=spinnerPrint, limitAction=hitLimit)
 	view.present('full_screen')
@@ -188,6 +189,5 @@ if __name__ == '__main__':
 	spinner2.position = (300,150)
 	view.add_subview(spinner1)
 	view.add_subview(spinner2)
-	spinner1.value = 9
 	print spinner1.value
 	print view.subviews[0].value

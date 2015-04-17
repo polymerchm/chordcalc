@@ -1,4 +1,4 @@
-chordcalc Version 5.0
+chordcalc Version 5.5
 =================
 
 Turning  Gek S. Low's chordcalc python script into a full-featured chord calculator/player 
@@ -25,7 +25,11 @@ downloads realistic sounds from github
 
 - **Shield.py**
 
-The new features in 5.0 are:
+The new features in 5.5 are:
+	
+- better handling of multiple device based on their size
+
+Verion 5.0:
 
 - iPhone 6 compatible (to emulatate the iPhone on an iPad, set the variable debugOnIpad to True)
 

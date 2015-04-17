@@ -104,6 +104,8 @@ t=linspace(0,duration*sampleRate,numSamples)
 envelope = Envelope(numSamples)(t)
 print len(envelope)
 
+
+
 for octave in range(8):
 	for note in range(12):
 		freq = freq_array[octave][note]
@@ -119,12 +121,12 @@ for octave in range(8):
 			signal += relative[harmonic]*np.sin(np.pi * 2 * ((harmonic+1)*t / numSamplesPerCyc))
 
 		sample = signal * envelope
-		max = abs(np.amax(sample))
-		min = abs(np.amin(sample))
-		if max > min:
-			sample = sample * 32767 / max
+		maxSignal = abs(np.amax(sample))
+		minSignal = abs(np.amin(sample))
+		if maxSignal > minSignal:
+			sample = sample * 32767 / maxSignal
 		else:
-			sample = sample * 32767 / min			
+			sample = sample * 32767 / minSignal			
 		data = sample.astype(int16)
 
 	
