@@ -107,7 +107,7 @@ class Spinner(ui.View):
 	@position.setter
 	def position(self,value):
 		self._position = value
-		self.frame = value + tuple(self.frame[2:])
+		self.frame = value + tuple(self.frame)[2:]
 
 	@property
 	def value(self):

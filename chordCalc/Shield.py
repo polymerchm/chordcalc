@@ -9,7 +9,7 @@ class Shield(object):
 		self.shield = ui.View(frame=view.frame,background_color=tint,flex='WH',name='shield')
 		self.shield.alpha = alpha
 		self._frame = self.shield.frame
-		self._position = (self._frame[:2])
+		self._position = (tuple(self._frame)[:2])
 		if local:
 			self.view.add_subview(self.shield)
 		else:
@@ -92,4 +92,3 @@ if __name__ == '__main__':
 
 	v.present('sheet')
 	v.wait_modal()
-

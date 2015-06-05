@@ -2518,7 +2518,10 @@ def onFind(button):
 		tvFind.hidden = False
 		tvFind.reload_data()
 		if len(list):
-			scrollRoot.content_offset = (0,0)
+			try:
+				scrollRoot.content_offset = (0,0)
+			except NameError:
+				return
 		
 def on_slider(sender):
 	sound.set_volume(sender.value)
@@ -3063,7 +3066,7 @@ class InstrumentEditor(ui.View):
 		
 	def onSpinnerLimit(self,sender,arrow):
 		string = int(sender.name[-1])
-		direction =  -1 if 'down' in sender.name.lower() else 1
+		direction =  -1 if 'down' in arrow.name.lower() else 1
 		pointer = sender.pointer
 		currentOctaves = [int(x.text) for x in self.octaveTextArray]			
 		thisOctave = currentOctaves[string]
@@ -3488,7 +3491,6 @@ if __name__ == "__main__":
 		centerPanel.add_subview(scaleSpinner)
 		subviewHost['sp_scale'] = centerPanel
 		scaleSpinner.position = (270,300)
-
 	
 	scaleSpinner.hidden = True
 	
@@ -3508,7 +3510,6 @@ if __name__ == "__main__":
 	panelView('button_new_instrument').action = panelView('view_instrumentEditor').onNewInstrument	
 	if iPad:
 		panelView('tri_chord_label').frame = (-200,-200,0,0) # since it wont' hide, i send it to hell!!!!'
-	
 	
 	#windowView = ui.View(frame=(0,0,screenWidth,screenHeight))
 	#windowView.add_subview(scrollRoot)
