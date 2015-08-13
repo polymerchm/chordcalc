@@ -65,10 +65,13 @@ import chordcalc_constants as cccInit
 import Spinner; 		reload(Spinner); 			from Spinner import Spinner
 import Shield; 			reload(Shield); 			from Shield import Shield
 
+#import _ui
+
 SettingsFileName = 'settings.ini'
 ConfigFileName = 'config.ini'
 
-debugOnIpad = False
+debugOnIpad =  False
+
     
 Triptych = {    # Panel, adjustment in position and size
     "tableview_scale":				("L",(70,0,30,-120)),
@@ -566,6 +569,7 @@ def apply_filters(filters,fingerings):
 							j += 2
 					entry = (field1,field2,field3)
 					filtered.append(entry)
+		#for item in temp_fingerings: print item
 		temp_fingerings = filtered				
 							
 	filtered = []
@@ -854,17 +858,14 @@ def relativeMajorDisplay():
 		key = currentState['root']['noteValue']
 		scale = currentState['scale']['title']
 	except:
-		return
-	
+		return 	
+	labelName = 'lbl_definition' if iPad else 'tri_chord_label'	
 	if scale in ccc['TRUE_ROOT'].keys():
-		text = "relative to {}".format(ccc['NOTE_NAMES'][(key-ccc['TRUE_ROOT'][scale])%12])
-		panelView('lbl_definition').text = text		
-		panelView('lbl_definition').hidden = False
+		text = "rel. to {}".format(ccc['NOTE_NAMES'][(key-ccc['TRUE_ROOT'][scale])%12])
+		panelView(labelName).text = text		
+		panelView(labelName).hidden = False
 	else:
-		panelView('lbl_definition').hidden = True
-
-	
-	
+		panelView(labelName).hidden = True	
 	
 # Fretboard Class
 
@@ -1850,7 +1851,11 @@ class Scale(object):
 		self.fb.set_scale_notes(self.scale_notes)
 		self.fb.scaleFrets = []
 		self.fb.set_needs_display()	
-		
+		if not iPad:
+			try:
+				scaleTypeSpinner.pointer = row
+			except TypeError:
+				pass
 		
 	def tableview_number_of_sections(self, tableview):
 		# Return the number of sections (defaults to 1)
@@ -1932,9 +1937,12 @@ class Root(object):
 			relativeMajorDisplay()
 			self.scale_notes = calc_scale_notes()
 			self.fb.scaleFrets = []
-			self.fb.set_scale_notes(self.scale_notes)			
-		
-
+			self.fb.set_scale_notes(self.scale_notes)		
+			if not iPad:
+				try:
+					scaleRootSpinner.pointer = row
+				except TypeError:
+					pass	
 		self.fb.set_needs_display()
 		
 	def tableview_number_of_sections(self, tableview):
@@ -2400,11 +2408,14 @@ def play_tuning(button):
 def playScale(button):	
 	global currentState
 	fretboard = currentState['fretboard']
-	if os.path.exists('waves') and fretboard.scaleFrets:
-		for string,fret in fretboard.scaleFrets:
-			octave,tone = divmod((fretboard.tuning['notes'][string]+fret),12)
-			sound.play_effect(getWaveName(tone,octave+fretboard.tuning['octave']))	
-			time.sleep(fretboard.arpSpeed)
+	try:
+		if os.path.exists('waves') and fretboard.scaleFrets:
+			for string,fret in fretboard.scaleFrets:
+				octave,tone = divmod((fretboard.tuning['notes'][string]+fret),12)
+				sound.play_effect(getWaveName(tone,octave+fretboard.tuning['octave']))	
+				time.sleep(fretboard.arpSpeed)
+	except AttributeError: # no scale frets yet
+		pass
 
 def toggle_mode(button):
 	global currentState #,fretboard,tvFind,tvScale,find
@@ -2418,23 +2429,24 @@ def toggle_mode(button):
 	except:
 		pass
 
-
+	iPhoneModeStrings = 'sp_scaleType sp_scaleRoot'.split() if not iPad else []
 	mode = button.title
-	hideshow = {}
 	hideshow = {'I':  {'hide':
-	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span sp_scale tri_chord_label'.split(),
+	                					'tableview_root tableview_type tableview_scale label1 button_scale_notes button_scale_tones chord_num label_middle button_play_scale num_chords lbl_chord lbl_fullchord lbl_definition btn_sharpFlat sp_span lbl_span sp_scale tri_chord_label  button_up button_down'.split() + iPhoneModeStrings,
 											'show':
 														('tableview_find', 'button_find', 'button_chord', 'button_arp')
 										},						
  							'C':	{'hide':
-										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat sp_scale'.split(),
-										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span tri_chord_label'.split()
+										 				'tableview_find button_find button_scale_tones button_scale_notes tableview_scale button_play_scale lbl_chord lbl_fullchord btn_sharpFlat sp_scale'.split() + iPhoneModeStrings,
+										'show': 'tableview_root tableview_type label1 chord_num num_chords label_middle button_chord button_arp sp_span lbl_span tri_chord_label button_up button_down'.split()
 										},
 							'S': 	{'hide': 
-										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span tri_chord_label'.split(),
-											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat sp_scale'.split()
+										 					'tableview_type tableview_find button_find chord_num num_chords label_middle button_chord button_arp lbl_chord lbl_fullchord lbl_definition sp_span lbl_span button_up button_down'.split(),
+											'show': 'tableview_scale tableview_root button_scale_tones button_scale_notes button_play_scale btn_sharpFlat sp_scale  tri_chord_label'.split() + iPhoneModeStrings,
 										}
 								}
+
+
 
 	fretboard.cc_mode = mode
 	
@@ -2446,7 +2458,10 @@ def toggle_mode(button):
 	currentState['mode'] = mode
 	mode_hs = hideshow[mode]
 	for view in mode_hs['hide']:		
-		panelView(view).hidden = True
+		try: 
+			panelView(view).hidden = True
+		except:
+			console.hud_alert('in toggle_mode, view {} does not exist'.format(view))
 	for view in mode_hs['show']:			
 		try:
 			panelView(view).hidden = False
@@ -2457,6 +2472,7 @@ def toggle_mode(button):
 		panelView('button_edit_chord').title = 'type'
 	elif mode == 'S':
 		panelView('button_edit_chord').title = 'mode'
+		# set default and C major
 	else: # 'I'
 		panelView('button_edit_chord').title = ''		
 		tvFind.data_source.items = []
@@ -2532,7 +2548,7 @@ def on_slider_arp(sender):
 	v = sender.value
 	fretboard.arpSpeed = fretboard.arpMin*v + (1.0-v)*fretboard.arpMax
 	
-def onSpanSpinner(sender):
+def onSpanSpinner(sender,arrow):
 	''' repond to changes in span'''
 	global currentState
 	value = sender.value
@@ -3299,8 +3315,10 @@ if __name__ == "__main__":
 	
 	if debugOnIpad:
 		iPad = False
-		screenHeight = 578 #667.0
-		screenWidth =  350 # 375.0
+		#screenHeight = 575 
+		screenHeight = 667.0
+		#screenWidth =  350 
+		screenWidth = 375.0
 	
 	currentState = {'root':None,'chord':None,'instrument':None,'filters':None,'scale': None,'mode':'C'}	
 	mainView = ui.load_view()
@@ -3332,26 +3350,7 @@ if __name__ == "__main__":
 			shields[panel.name
 			        ] = Shield(panel,local=True)
 			shields[panel.name].position = (0,0)	
-			l,t,w,h = panel.frame
-			if panel == leftPanel:
-				b = ui.Button(frame=(screenWidth-btnWidth,0,btnWidth,screenHeight))
-				b.action = shiftScreen
-				b.name='left_to_center'
-				panel.add_subview(b)
-			elif panel == centerPanel:
-				b1 = ui.Button(frame=(0,0,btnWidth,screenHeight))
-				b1.action = shiftScreen
-				b1.name='center_to_left'
-				b2 =ui.Button(frame=(screenWidth-btnWidth,0,btnWidth,screenHeight))
-				b2.action=shiftScreen
-				b2.name='center_to_right'
-				panel.add_subview(b1)
-				panel.add_subview(b2)
-			elif panel == rightPanel:
-				b = ui.Button(frame=(0,0,btnWidth,screenHeight))
-				b.action=shiftScreen
-				b.name='right_to_center'
-				panel.add_subview(b)
+
 				
 				
 		for subview in mainView.subviews:
@@ -3481,7 +3480,7 @@ if __name__ == "__main__":
 	                       name='sp_scale',
 	                       fontSize = 12,
 	                       initialValue=['normal','down','open','FourOnString'],
-	                       action=onScaleSpinner)
+	                       action=onScaleSpinner,wrap = True)
 	                       
 		
 	if iPad:
@@ -3493,6 +3492,72 @@ if __name__ == "__main__":
 		scaleSpinner.position = (270,300)
 	
 	scaleSpinner.hidden = True
+
+	if not iPad:
+		
+		def onScaleTypeSpinner(spinner,arrow):
+			global currentState, scale, tvScale
+			row = spinner.pointer
+			for i,_ in enumerate(scale.items):
+				scale.items[i]['accessory_type'] = 'none'
+			scale.items[row]['accessory_type'] = 'checkmark'
+			tvScale.reload_data()	
+			scale.scale = {'title': scale.items[row]['title'], 
+										'scaleintervals': scale.items[row]['scaleintervals'], 'row':row}
+			currentState['scale'] = scale.scale
+			
+			scale.scale_notes = calc_scale_notes()		
+			relativeMajorDisplay()
+			scale.fb.set_scale_notes(scale.scale_notes)
+			scale.fb.scaleFrets = []
+			scale.fb.set_needs_display()	
+
+			
+			
+		scaleTypeSpinner = Spinner(spinnerSize=(100,40),
+														name="sp_scaleType",
+														fontSize = 12,
+														initialValue = [x[0] for x in ccc['SCALETYPE']],
+	 													action=onScaleTypeSpinner,
+														wrap = True)
+		centerPanel.add_subview(scaleTypeSpinner)
+		subviewHost['sp_scaleType'] = centerPanel
+		scaleTypeSpinner.position = (270,170)									
+		scaleTypeSpinner.hidden= True
+			
+		def onScaleRootSpinner(spinner,arrow):
+			global currentState, root, tvRoot
+			row = spinner.pointer
+			for i,_ in enumerate(root.items):
+				root.items[i]['accessory_type'] = 'none'
+			root.items[row]['accessory_type'] = 'checkmark'
+			tvRoot.reload_data()	
+			root.root = {'title': root.items[row]['title'], 'noteValue': root.items[row]['noteValue'], 'row':row}
+			currentState['root'] = root.root
+			
+			mode = currentState['mode']
+			relativeMajorDisplay()
+			root.scale_notes = calc_scale_notes()
+			root.fb.scaleFrets = []
+			root.fb.set_scale_notes(root.scale_notes)		
+			try:
+				scaleRootSpinner.pointer = row
+			except TypeError:
+				pass
+			root.fb.set_needs_display()
+			
+
+		scaleRootSpinner = Spinner(spinnerSize=(100,40),
+														name="sp_scaleRoot",
+														fontSize = 12,
+														initialValue = [x['title'] for x in ccc['ROOT_LIST_CLEAN']],
+	 													action=onScaleRootSpinner,
+														wrap=True)
+		centerPanel.add_subview(scaleRootSpinner)
+		subviewHost['sp_scaleRoot'] = centerPanel
+		scaleRootSpinner.position = (270,100)									
+		scaleRootSpinner.hidden= True
+														
 	
 	panelView('view_fretEnter').hidden = True
 	panelView('sp_span').hidden = True
@@ -3514,7 +3579,8 @@ if __name__ == "__main__":
 	#windowView = ui.View(frame=(0,0,screenWidth,screenHeight))
 	#windowView.add_subview(scrollRoot)
 	fretboard.set_chordnum(chord_num,num_chords)
-	sound.set_volume(0.5)	
+	sound.set_volume(0.5)
+	##############################################################
 	toggle_mode(panelView('button_calc'))
 # need to choose what to display here.
 	if iPad:

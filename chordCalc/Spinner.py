@@ -37,7 +37,8 @@ class Spinner(ui.View):
 											limitAction=None, #done if hit a limit
 											textFraction = 0.75,
 											fontSize = 12,
-											spinnerSize=(80,80)
+											spinnerSize=(80,80),
+											wrap=False # if wrap is true and its a list, ignore limitAction and just wrap
 											):
 
 		self._value = self.initialValue = initialValue
@@ -55,8 +56,9 @@ class Spinner(ui.View):
 			self._limits = len(self.list)-1
 			self._increment = 1
 			self._pointer = 0
+		self.wrap = wrap
 		self.action = action
-		self.limitAction = limitAction
+		self.limitAction = limitAction if not wrap else None
 		self.textFraction = textFraction
 		self.spinnerSize = spinnerSize
 		self.frame = (0,0)+(self.spinnerSize)
@@ -156,7 +158,16 @@ class Spinner(ui.View):
 				self.label.text = str(self._value)
 				if self.action: self.action(self,increment)
 			else:
-				if self.limitAction: self.limitAction(self,sender)
+				if self.limitAction: 
+					self.limitAction(self,sender)
+				elif self.wrap:
+					if self._pointer:
+						self._pointer = 0
+					else:
+						self._pointer = self._limits
+					self._value = self.list[self._pointer]
+					self.label.text = str(self._value)
+					if self.action: self.action(self,increment)
 		else: # a scalar
 			if self._limits[0] <= self._value + increment <= self._limits[1]:
 				self._value += increment
@@ -181,7 +192,8 @@ if __name__ == '__main__':
 
 	view = ui.View(background_color = 'white')
 	spinner1 = Spinner(name='Spinner1',
-	                   initialValue = "this is a test".split(),spinnerSize=(60,50),textFraction=0.50,fontSize=16,limitAction=hitLimit)
+	                   initialValue = "this is a test".split(),spinnerSize=(60,50),textFraction=0.50,fontSize=16,limitAction=hitLimit,
+											wrap=False)
 	spinner2 = Spinner(name='Spinner2',initialValue = 0, increment = 2, 
 	                   limits = (-10,10),action=spinnerPrint, limitAction=hitLimit)
 	view.present('full_screen')
