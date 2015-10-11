@@ -1,4 +1,4 @@
-chordcalc Version 5.5
+chordcalc Version 6.0
 =================
 
 Turning  Gek S. Low's chordcalc python script into a full-featured chord calculator/player 
@@ -25,9 +25,15 @@ downloads realistic sounds from github
 
 - **Shield.py**
 
-The new features in 5.5 are:
+- **DropDown.py**
+
+The new features in 6.0 are:
 	
+- Chord Progrssion tool implemented
+
 - better handling of multiple device based on their size
+
+- use of DropDown class for compact handing of item single item selection
 
 Verion 5.0:
 
@@ -98,6 +104,9 @@ In identify mode, you touch the fingerboard to indicate a fingering  When you hi
 
 In scale mode, you select a key (the root) and the scale type (second column on left).  All notes on the scale across the entire fretboard are displayed.  If you touch a root position, a two octave display is highlighted.  Hitting the scale button plays the scale.  The speed/volume sliders are also effective here.  If the mode is one of the greek modes, then the base key is displayed in the upper right hand corner (for example, A Aoelian is based on C Ionian (major), A Dorian is actually the key of G Ionian (major)). Every effort is made to have the appropriate anharmonics (sharps or flats) display based on the  key signature (or for the greeek modes, its base).  You can toggle the display between scale notes and scale degrees and, for "ambiguous" key signatures (like A#/Bb), you can toggle anharmonic notes between sharps and flats.  **New Feature**.  A Spinner is presented to allow for different modes of calculating a 2 0ctave scale.  This is experimental at this point.  
 
+*Progression Mode*
+
+In progression mode, you select a progression and a key. Depending on the number of chords in the progression, that many partioal fretboards will be presented, along with the fret number of the uppermost display fret.  In this mode, in addition to the Span Spinner (number of frets a valid chord can span), the Shift spinner will control the maximum shift of the "centroid" of the fingered chord can shift for the progression.  Note that large values of Shift will generate a very large number of permutations of chords and can bring the program to its knees.  Once calculated, you can play the progression.  All fingerboards will be subject to the filters that are currently set. The first chord in the progrssion is the only one that can be directed to change.  Touches at the top or bottom move the next or previous inversion of the chord.  Similar to to Instrument Editor, there is a Progresson Editor to allow new progression to be added by the user.  
 
 - **debugStream.py** 
 
@@ -157,4 +166,20 @@ vShield.isActive()  # returns that status
 vShield.delete()		# destroys the shield object.
 ```
 
+- **DropDown.py**
+
+is a custom view that presents a DropDown view where the currect selected item of a ui.listview object and an arrow to "dropdown" the list are displayed.  Touching the arrow toggles the compact and extended version of the list.  Touching a selection selects that row and deslects all others.  	If an action is specified, a method is called.
+
+```
+dd = DropDown(	frame=(0,0,150,32),
+							buttonSize = (32,32),
+							data = "this is a test".split(),
+							font = None,
+							initialItem = 0,
+							offset_eps = 0,
+							action = None, # expects a 2 argument method where the first argumenet is the dd instance and     							 # the second is the row which was selected in the list
+							fullSize = 300,
+							name = 'dropdown'):
+										
+```
 Have fun

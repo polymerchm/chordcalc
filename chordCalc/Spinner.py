@@ -156,7 +156,7 @@ class Spinner(ui.View):
 				self._pointer += increment
 				self._value = self.list[self._pointer]
 				self.label.text = str(self._value)
-				if self.action: self.action(self,increment)
+				if self.action: self.action(self)
 			else:
 				if self.limitAction: 
 					self.limitAction(self,sender)
@@ -167,12 +167,12 @@ class Spinner(ui.View):
 						self._pointer = self._limits
 					self._value = self.list[self._pointer]
 					self.label.text = str(self._value)
-					if self.action: self.action(self,increment)
+					if self.action: self.action(self)
 		else: # a scalar
 			if self._limits[0] <= self._value + increment <= self._limits[1]:
 				self._value += increment
 				self.label.text = str(self._value)
-				if self.action: self.action(self,sender)
+				if self.action: self.action(self)
 			else:
 				if self.limitAction: self.limitAction(self,sender)
 

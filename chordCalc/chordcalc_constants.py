@@ -389,3 +389,13 @@ CAPOS = [
          {'title':		'Reverse Sus2',		'fret':	0,	'mask': (0,0,1,1,1,0), 'accessory_type': 'none'},
          {'title':		'Banjo 5th',			'fret':	0,	'mask': (1,), 				 'accessory_type': 'none'},
         ]	
+        
+PROGRESSION = [
+							{'title': 'I-V', 	'chords':['0-maj','7-min']},
+							{'title': 'I-V7', 'chords':['0-maj', '7-7']},
+							{'title': 'I-IV-V', 'chords':['0-maj','5-maj','7-maj']},
+							{'title': 'I-IV-V7', 'chords':['0-maj','5-maj','7-7']},
+							{'title': 'ii-V7-I', 'chords':['2-min','7-7','0-maj']},
+							{'title': 'iim7-V7-IM7', 'chords':['2-m7','7-7','0-M7']},
+							{'title': 'vim7-iim7-V7-IM7', 'chords':['9-m7','2-m7','7-7','0-M7']},
+						  ]
